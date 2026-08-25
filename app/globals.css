@@ -1,26 +1,84 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --kam-navy: #202d61;
+  --kam-navy-dark: #111936;
+  --kam-yellow: #ffd000;
+  --kam-steel: #eef1f4;
+  --kam-charcoal: #20242a;
+  --kam-muted: #667085;
+  --kam-white: #ffffff;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background: var(--kam-white);
+  color: var(--kam-charcoal);
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+}
+
+::selection {
+  background: var(--kam-yellow);
+  color: var(--kam-navy-dark);
+}
+
+.kam-container {
+  width: min(1180px, calc(100% - 40px));
+  margin-inline: auto;
+}
+
+.kam-section {
+  padding: 96px 0;
+}
+
+.kam-eyebrow {
+  color: var(--kam-navy);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.kam-heading {
+  margin-top: 12px;
+  color: var(--kam-navy-dark);
+  font-size: clamp(2rem, 4vw, 3.6rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.kam-copy {
+  color: var(--kam-muted);
+  font-size: 1rem;
+  line-height: 1.8;
+}
+
+.metal-angle {
+  clip-path: polygon(0 0, 100% 0, 96% 100%, 0 100%);
+}
+
+@media (max-width: 768px) {
+  .kam-section {
+    padding: 68px 0;
+  }
+
+  .kam-container {
+    width: min(100% - 28px, 1180px);
+  }
+
+  .metal-angle {
+    clip-path: none;
+  }
 }
