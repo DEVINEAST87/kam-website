@@ -167,58 +167,76 @@ export default function RequestPricingPage() {
 
   return (
     <main className="min-h-screen bg-[#f4f6f8] text-[#111936]">
+      {/* HEADER */}
       <header className="bg-[#0b1024] text-white">
-        <div className="kam-container flex min-h-20 items-center justify-between gap-6 py-4">
-          <Link href="/" className="flex items-center">
+        <div className="kam-container flex min-h-20 items-center justify-between gap-4 py-3 sm:gap-6 sm:py-4">
+          <Link href="/" className="flex shrink-0 items-center">
             <Image
               src="/logos/kam-logo-horizontal.png"
               alt="Kansas Architectural Metals"
               width={220}
               height={70}
-              className="h-auto w-[190px] brightness-0 invert"
+              className="h-auto w-[145px] brightness-0 invert sm:w-[190px]"
               priority
             />
           </Link>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3 sm:gap-6">
             <Link
               href="/"
-              className="hidden text-xs font-black uppercase tracking-[0.14em] text-white/80 transition hover:text-yellow-400 sm:block"
+              className="hidden text-xs font-black uppercase tracking-[0.14em] text-white/80 transition hover:text-yellow-400 md:block"
             >
               ← Back to Home
             </Link>
 
             <Link
               href="/submit-order"
-              className="rounded-md bg-yellow-400 px-4 py-3 text-xs font-black uppercase tracking-[0.1em] text-[#111936] transition hover:bg-yellow-300"
+              className="rounded-md bg-yellow-400 px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.08em] text-[#111936] transition hover:bg-yellow-300 sm:px-4 sm:text-xs sm:tracking-[0.1em]"
             >
-              Submit an Order
+              Submit Order
             </Link>
           </div>
         </div>
       </header>
 
+      {/* HERO */}
       <section className="bg-[#202d61] text-white">
         <div className="grid lg:grid-cols-[1.15fr_.85fr]">
           <div className="flex items-center">
-            <div className="w-full px-6 py-20 sm:px-10 lg:ml-auto lg:max-w-[760px] lg:px-12 lg:py-24">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-yellow-400">
+            <div className="w-full px-6 py-14 sm:px-10 sm:py-20 lg:ml-auto lg:max-w-[760px] lg:px-12 lg:py-24">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-yellow-400 sm:text-xs sm:tracking-[0.24em]">
                 Request Current Pricing
               </p>
 
-              <h1 className="mt-5 max-w-3xl text-5xl font-black leading-[0.95] tracking-[-0.05em] sm:text-6xl">
+              <h1 className="mt-4 max-w-3xl text-4xl font-black leading-[0.95] tracking-[-0.05em] sm:mt-5 sm:text-6xl">
                 Get the pricing you can actually use.
               </h1>
 
-              <p className="mt-7 max-w-2xl text-lg leading-8 text-blue-100/80">
+              <p className="mt-6 max-w-2xl text-base leading-7 text-blue-100/80 sm:mt-7 sm:text-lg sm:leading-8">
                 Material and fabrication pricing can change quickly. Rather than
                 publish a price sheet that may already be outdated, KAM provides
                 current pricing directly based on what you need.
               </p>
+
+              <div className="mt-7 flex flex-wrap gap-2 sm:mt-9 sm:gap-3">
+                {[
+                  "Material Pricing",
+                  "Panel Pricing",
+                  "Fabrication",
+                  "Accessories",
+                ].map((item) => (
+                  <span
+                    key={item}
+                    className="border border-white/20 bg-white/5 px-3 py-2 text-[9px] font-black uppercase tracking-[0.12em] text-white/80 sm:px-4 sm:text-[10px] sm:tracking-[0.16em]"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="relative min-h-[340px] overflow-hidden lg:min-h-[520px]">
+          <div className="relative min-h-[260px] overflow-hidden sm:min-h-[340px] lg:min-h-[520px]">
             <Image
               src="/images/product-trim-profiles.jpg"
               alt="Custom architectural sheet metal profiles fabricated by KAM"
@@ -227,11 +245,23 @@ export default function RequestPricingPage() {
               className="object-cover"
             />
 
-            <div className="absolute inset-0 bg-gradient-to-r from-[#202d61]/55 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#202d61]/60 via-transparent to-transparent lg:bg-gradient-to-r lg:from-[#202d61]/55" />
+
+            <div className="absolute bottom-4 left-4 right-4 border-l-4 border-yellow-400 bg-[#0b1024]/90 px-4 py-3 backdrop-blur-sm sm:bottom-6 sm:left-auto sm:right-6 sm:max-w-sm sm:px-5 sm:py-4">
+              <p className="text-[9px] font-black uppercase tracking-[0.16em] text-yellow-400 sm:text-[10px] sm:tracking-[0.18em]">
+                Current Pricing
+              </p>
+
+              <p className="mt-1 text-sm font-bold text-white">
+                Ask for the latest information instead of relying on an old
+                sheet.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
+      {/* PROCESS */}
       <section className="border-b border-slate-200 bg-white">
         <div className="kam-container grid md:grid-cols-3">
           {[
@@ -253,8 +283,10 @@ export default function RequestPricingPage() {
           ].map(([number, title, copy], index) => (
             <div
               key={number}
-              className={`flex gap-5 py-7 ${
-                index > 0 ? "md:border-l md:border-slate-200 md:pl-8" : ""
+              className={`flex gap-4 py-5 sm:gap-5 sm:py-7 ${
+                index > 0
+                  ? "border-t border-slate-200 md:border-l md:border-t-0 md:pl-8"
+                  : ""
               }`}
             >
               <span className="text-sm font-black text-yellow-500">
@@ -263,26 +295,26 @@ export default function RequestPricingPage() {
 
               <div>
                 <p className="font-black text-[#111936]">{title}</p>
-                <p className="mt-1 text-sm leading-6 text-slate-500">
-                  {copy}
-                </p>
+                <p className="mt-1 text-sm leading-6 text-slate-500">{copy}</p>
               </div>
             </div>
           ))}
         </div>
       </section>
 
+      {/* FORM */}
       <section className="kam-section">
-        <div className="kam-container grid gap-10 lg:grid-cols-[1.35fr_.65fr]">
+        <div className="kam-container grid gap-8 lg:grid-cols-[1.35fr_.65fr] lg:gap-10">
           <form
             onSubmit={handleSubmit}
             encType="multipart/form-data"
-            className="border border-slate-200 bg-white p-7 shadow-sm sm:p-10"
+            className="border border-slate-200 bg-white p-5 shadow-sm sm:p-10"
           >
+            {/* CONTACT */}
             <div>
               <p className="kam-eyebrow">Contact Information</p>
 
-              <div className="mt-7 grid gap-6 sm:grid-cols-2">
+              <div className="mt-6 grid gap-5 sm:mt-7 sm:grid-cols-2 sm:gap-6">
                 <Field label="Company Name" name="company" required />
                 <Field label="Contact Name" name="contactName" required />
                 <Field label="Phone Number" name="phone" type="tel" required />
@@ -292,10 +324,11 @@ export default function RequestPricingPage() {
 
             <Divider />
 
+            {/* LOCATION */}
             <div>
               <p className="kam-eyebrow">KAM Location</p>
 
-              <div className="mt-7 max-w-xl">
+              <div className="mt-6 max-w-xl sm:mt-7">
                 <SelectField
                   label="Preferred Location"
                   name="location"
@@ -311,10 +344,11 @@ export default function RequestPricingPage() {
 
             <Divider />
 
+            {/* PRICING CATEGORIES */}
             <div>
               <p className="kam-eyebrow">What Pricing Do You Need?</p>
 
-              <div className="mt-7 grid gap-4 sm:grid-cols-2">
+              <div className="mt-6 grid gap-3 sm:mt-7 sm:grid-cols-2 sm:gap-4">
                 {[
                   "Architectural Sheet Metal / Trim",
                   "Roof Panel Pricing",
@@ -327,16 +361,16 @@ export default function RequestPricingPage() {
                 ].map((item) => (
                   <label
                     key={item}
-                    className="flex cursor-pointer items-center gap-3 border border-slate-200 bg-[#f8f9fa] p-4 transition hover:border-[#202d61]"
+                    className="flex min-h-14 cursor-pointer items-center gap-3 border border-slate-200 bg-[#f8f9fa] p-4 transition hover:border-[#202d61]"
                   >
                     <input
                       type="checkbox"
                       name="pricingType"
                       value={item}
-                      className="h-4 w-4"
+                      className="h-5 w-5 shrink-0"
                     />
 
-                    <span className="text-sm font-bold text-[#111936]">
+                    <span className="text-sm font-bold leading-5 text-[#111936]">
                       {item}
                     </span>
                   </label>
@@ -346,10 +380,11 @@ export default function RequestPricingPage() {
 
             <Divider />
 
+            {/* MATERIAL */}
             <div>
               <p className="kam-eyebrow">Material Information</p>
 
-              <div className="mt-7 grid gap-6 sm:grid-cols-2">
+              <div className="mt-6 grid gap-5 sm:mt-7 sm:grid-cols-2 sm:gap-6">
                 <SelectField
                   label="Material"
                   name="material"
@@ -367,7 +402,7 @@ export default function RequestPricingPage() {
                 <Field label="Finish / Color" name="color" />
               </div>
 
-              <label className="mt-6 block">
+              <label className="mt-5 block sm:mt-6">
                 <span className="text-sm font-black text-[#111936]">
                   Additional Details
                 </span>
@@ -375,7 +410,7 @@ export default function RequestPricingPage() {
                 <textarea
                   name="details"
                   rows={7}
-                  className="mt-2 w-full border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-[#202d61]"
+                  className="mt-2 w-full border border-slate-300 bg-white px-4 py-3 text-base outline-none transition focus:border-[#202d61]"
                   placeholder="Tell us what you're pricing, approximate quantities, project size, preferred panel profile or any other useful information."
                 />
               </label>
@@ -383,16 +418,24 @@ export default function RequestPricingPage() {
 
             <Divider />
 
+            {/* FILES */}
             <div>
-              <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="kam-eyebrow">Optional Project Files</p>
+
                   <p className="mt-3 text-sm leading-6 text-slate-500">
-                    Drag files into the box or choose them from your computer.
+                    Drag files into the box or choose them from your device.
                   </p>
                 </div>
 
-                <p className="text-xs font-black text-slate-400">
+                <p
+                  className={`text-xs font-black ${
+                    totalFileBytes > MAX_UPLOAD_BYTES
+                      ? "text-red-600"
+                      : "text-slate-400"
+                  }`}
+                >
                   {formatBytes(totalFileBytes)} / 3.5 MB
                 </p>
               </div>
@@ -403,17 +446,23 @@ export default function RequestPricingPage() {
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`group mt-7 flex min-h-56 cursor-pointer flex-col items-center justify-center border-2 border-dashed p-8 text-center transition ${
+                className={`group mt-6 flex min-h-48 cursor-pointer flex-col items-center justify-center border-2 border-dashed p-5 text-center transition sm:mt-7 sm:min-h-56 sm:p-8 ${
                   isDragging
                     ? "border-yellow-400 bg-yellow-50"
                     : "border-slate-300 bg-[#f8f9fa] hover:border-yellow-400 hover:bg-yellow-50/30"
                 }`}
               >
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#202d61] text-2xl font-black text-white">
+                <div
+                  className={`flex h-12 w-12 items-center justify-center rounded-full text-xl font-black transition sm:h-14 sm:w-14 sm:text-2xl ${
+                    isDragging
+                      ? "bg-yellow-400 text-[#111936]"
+                      : "bg-[#202d61] text-white group-hover:bg-yellow-400 group-hover:text-[#111936]"
+                  }`}
+                >
                   ↑
                 </div>
 
-                <span className="mt-5 text-lg font-black text-[#111936]">
+                <span className="mt-4 text-base font-black text-[#111936] sm:mt-5 sm:text-lg">
                   {isDragging
                     ? "Drop your files here"
                     : "Have drawings or takeoff information?"}
@@ -424,7 +473,11 @@ export default function RequestPricingPage() {
                   what pricing will be most useful to you.
                 </span>
 
-                <span className="mt-6 rounded-md bg-[#202d61] px-6 py-3 text-xs font-black uppercase tracking-wide text-white">
+                <span className="mt-4 text-[9px] font-black uppercase tracking-[0.12em] text-slate-400 sm:text-[10px] sm:tracking-[0.16em]">
+                  PDF • JPG • PNG • WEBP • WORD • EXCEL
+                </span>
+
+                <span className="mt-5 w-full rounded-md bg-[#202d61] px-6 py-4 text-xs font-black uppercase tracking-wide text-white sm:mt-6 sm:w-auto sm:py-3">
                   Choose Files
                 </span>
 
@@ -440,69 +493,84 @@ export default function RequestPricingPage() {
 
               {fileError && (
                 <div className="mt-4 border-l-4 border-red-500 bg-red-50 p-4">
-                  <p className="text-sm font-bold text-red-800">
-                    {fileError}
-                  </p>
+                  <p className="text-sm font-bold text-red-800">{fileError}</p>
                 </div>
               )}
 
               {selectedFiles.length > 0 && (
-                <div className="mt-6 overflow-hidden border border-slate-200 bg-white">
-                  <div className="flex items-center justify-between border-b border-slate-200 bg-[#f8f9fa] px-5 py-4">
-                    <p className="text-sm font-black">
-                      {selectedFiles.length}{" "}
-                      {selectedFiles.length === 1 ? "file" : "files"} selected
-                    </p>
+                <div className="mt-5 overflow-hidden border border-slate-200 bg-white sm:mt-6">
+                  <div className="flex items-center justify-between gap-4 border-b border-slate-200 bg-[#f8f9fa] px-4 py-4 sm:px-5">
+                    <div>
+                      <p className="text-sm font-black text-[#111936]">
+                        {selectedFiles.length}{" "}
+                        {selectedFiles.length === 1 ? "file" : "files"} selected
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-500">
+                        {formatBytes(totalFileBytes)} total
+                      </p>
+                    </div>
 
                     <button
                       type="button"
                       onClick={clearFiles}
-                      className="text-xs font-black uppercase text-slate-500 hover:text-red-600"
+                      className="shrink-0 text-[10px] font-black uppercase tracking-[0.08em] text-slate-500 transition hover:text-red-600 sm:text-xs"
                     >
                       Remove All
                     </button>
                   </div>
 
-                  {selectedFiles.map((file, index) => (
-                    <div
-                      key={`${file.name}-${index}`}
-                      className="flex items-center justify-between border-t border-slate-200 px-5 py-4 first:border-t-0"
-                    >
-                      <div>
-                        <p className="text-sm font-bold">
-                          ✓ {file.name}
-                        </p>
-
-                        <p className="mt-1 text-xs text-slate-400">
-                          {formatBytes(file.size)}
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => removeFile(index)}
-                        className="text-xs font-black uppercase text-slate-400 hover:text-red-600"
+                  <div className="divide-y divide-slate-200">
+                    {selectedFiles.map((file, index) => (
+                      <div
+                        key={`${file.name}-${file.size}-${index}`}
+                        className="flex items-center justify-between gap-4 px-4 py-4 sm:px-5"
                       >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-50 text-xs font-black text-green-700 sm:h-9 sm:w-9 sm:text-sm">
+                              ✓
+                            </div>
+
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-bold text-[#111936]">
+                                {file.name}
+                              </p>
+
+                              <p className="mt-1 text-xs text-slate-400">
+                                {formatBytes(file.size)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => removeFile(index)}
+                          className="shrink-0 text-[10px] font-black uppercase text-slate-400 transition hover:text-red-600 sm:text-xs"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
 
+            {/* CONFIRMATION */}
             {status === "success" && (
-              <div className="mt-8 border-l-4 border-green-500 bg-green-50 p-5">
+              <div className="mt-7 border-l-4 border-green-500 bg-green-50 p-4 sm:mt-8 sm:p-5">
                 <p className="font-black text-green-900">
                   Pricing request received.
                 </p>
 
-                <p className="mt-2 text-sm text-green-800">
+                <p className="mt-2 text-sm leading-6 text-green-800">
                   {message}
                 </p>
 
                 {referenceNumber && (
-                  <p className="mt-3 text-sm font-black text-green-900">
+                  <p className="mt-3 break-all text-sm font-black text-green-900">
                     Reference: {referenceNumber}
                   </p>
                 )}
@@ -510,12 +578,12 @@ export default function RequestPricingPage() {
             )}
 
             {status === "error" && (
-              <div className="mt-8 border-l-4 border-red-500 bg-red-50 p-5">
+              <div className="mt-7 border-l-4 border-red-500 bg-red-50 p-4 sm:mt-8 sm:p-5">
                 <p className="font-black text-red-900">
                   We couldn&apos;t submit your pricing request.
                 </p>
 
-                <p className="mt-2 text-sm text-red-800">
+                <p className="mt-2 text-sm leading-6 text-red-800">
                   {message}
                 </p>
               </div>
@@ -524,7 +592,7 @@ export default function RequestPricingPage() {
             <button
               type="submit"
               disabled={status === "sending"}
-              className="mt-10 w-full rounded-md bg-yellow-400 px-7 py-5 text-sm font-black uppercase tracking-wide text-[#111936] transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-7 w-full rounded-md bg-yellow-400 px-6 py-5 text-sm font-black uppercase tracking-wide text-[#111936] transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60 sm:mt-10 sm:px-7"
             >
               {status === "sending"
                 ? "Sending Pricing Request..."
@@ -532,33 +600,106 @@ export default function RequestPricingPage() {
             </button>
           </form>
 
+          {/* SIDEBAR */}
           <aside className="space-y-5">
-            <div className="bg-[#111936] p-8 text-white">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-yellow-400">
+            <div className="relative min-h-[220px] overflow-hidden sm:min-h-[260px]">
+              <Image
+                src="/images/product-custom-components.jpg"
+                alt="Custom fabricated architectural sheet metal components"
+                fill
+                className="object-cover"
+              />
+
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0b1024]/85 via-transparent to-transparent" />
+
+              <div className="absolute bottom-0 left-0 p-5 text-white sm:p-6">
+                <p className="text-[9px] font-black uppercase tracking-[0.16em] text-yellow-400 sm:text-[10px]">
+                  KAM Fabrication
+                </p>
+
+                <p className="mt-2 max-w-xs text-sm font-bold leading-6 sm:text-base">
+                  Pricing built around the material and fabrication your project
+                  actually requires.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-[#111936] p-6 text-white sm:p-8">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-yellow-400 sm:text-xs">
                 Why Request Pricing?
               </p>
 
-              <h2 className="mt-5 text-3xl font-black">
+              <h2 className="mt-4 text-2xl font-black tracking-[-0.04em] sm:mt-5 sm:text-3xl">
                 Material costs move.
               </h2>
 
-              <p className="mt-5 leading-7 text-slate-300">
-                Requesting current pricing helps prevent estimates from being
-                based on outdated information.
+              <p className="mt-4 leading-7 text-slate-300 sm:mt-5">
+                By requesting current pricing, you avoid estimating from an
+                outdated sheet and give our team the opportunity to provide
+                information that better fits the scope of your project.
               </p>
             </div>
 
-            <div className="border border-slate-200 bg-white p-8">
+            <div className="border border-slate-200 bg-white p-6 sm:p-8">
               <p className="kam-eyebrow">Need a Project Quote?</p>
+
+              <h2 className="mt-4 text-2xl font-black tracking-[-0.03em]">
+                Send us the project instead.
+              </h2>
+
+              <p className="mt-4 text-sm leading-7 text-slate-500">
+                If you already have drawings or a defined scope, our quote
+                request form may be the faster route.
+              </p>
 
               <Link
                 href="/request-quote"
-                className="mt-6 block w-full border border-[#202d61] px-5 py-4 text-center text-xs font-black uppercase tracking-wide text-[#202d61]"
+                className="mt-6 block w-full border border-[#202d61] px-5 py-4 text-center text-xs font-black uppercase tracking-wide text-[#202d61] transition hover:bg-[#202d61] hover:text-white"
               >
                 Request a Quote →
               </Link>
             </div>
+
+            <div className="border-t-4 border-yellow-400 bg-white p-6 sm:p-8">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 sm:text-xs">
+                Questions?
+              </p>
+
+              <a
+                href="tel:9134411208"
+                className="mt-4 block text-2xl font-black transition hover:text-[#202d61]"
+              >
+                913-441-1208
+              </a>
+
+              <p className="mt-3 text-sm leading-6 text-slate-500">
+                Monday–Friday
+                <br />
+                6:30 AM–4:30 PM
+              </p>
+            </div>
           </aside>
+        </div>
+      </section>
+
+      {/* BOTTOM STRIP */}
+      <section className="bg-[#111936] py-8 text-white sm:py-10">
+        <div className="kam-container flex flex-col justify-between gap-5 md:flex-row md:items-center">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-yellow-400 sm:text-xs sm:tracking-[0.18em]">
+              Kansas Architectural Metals
+            </p>
+
+            <p className="mt-2 text-lg font-black sm:text-xl">
+              Architectural Metals. Built by Pros.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-x-6 gap-y-2 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 sm:gap-x-8 sm:text-xs sm:tracking-[0.1em]">
+            <span>Wichita</span>
+            <span>Shawnee</span>
+            <span>Topeka</span>
+          </div>
         </div>
       </section>
     </main>
@@ -566,7 +707,7 @@ export default function RequestPricingPage() {
 }
 
 function Divider() {
-  return <div className="my-10 h-px bg-slate-200" />;
+  return <div className="my-8 h-px bg-slate-200 sm:my-10" />;
 }
 
 function Field({
@@ -591,7 +732,7 @@ function Field({
         type={type}
         name={name}
         required={required}
-        className="mt-2 w-full border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-[#202d61]"
+        className="mt-2 min-h-12 w-full border border-slate-300 bg-white px-4 py-3 text-base outline-none transition focus:border-[#202d61]"
       />
     </label>
   );
@@ -608,14 +749,12 @@ function SelectField({
 }) {
   return (
     <label className="block">
-      <span className="text-sm font-black text-[#111936]">
-        {label}
-      </span>
+      <span className="text-sm font-black text-[#111936]">{label}</span>
 
       <select
         name={name}
         defaultValue=""
-        className="mt-2 w-full border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-[#202d61]"
+        className="mt-2 min-h-12 w-full border border-slate-300 bg-white px-4 py-3 text-base outline-none transition focus:border-[#202d61]"
       >
         <option value="" disabled>
           Select an option
