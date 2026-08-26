@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-export default function SubmitOrderPage() {
+export default function RequestPricingPage() {
   return (
     <main className="min-h-screen bg-[#f4f6f8] text-[#111936]">
       {/* HEADER */}
@@ -27,10 +27,10 @@ export default function SubmitOrderPage() {
             </Link>
 
             <Link
-              href="/request-quote"
-              className="rounded-md border border-white/25 px-4 py-3 text-xs font-black uppercase tracking-[0.1em] transition hover:border-yellow-400 hover:text-yellow-400"
+              href="/submit-order"
+              className="rounded-md bg-yellow-400 px-4 py-3 text-xs font-black uppercase tracking-[0.1em] text-[#111936] transition hover:bg-yellow-300"
             >
-              Request a Quote
+              Submit an Order
             </Link>
           </div>
         </div>
@@ -42,21 +42,26 @@ export default function SubmitOrderPage() {
           <div className="flex items-center">
             <div className="w-full px-6 py-20 sm:px-10 lg:ml-auto lg:max-w-[760px] lg:px-12 lg:py-24">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-yellow-400">
-                Order Submission
+                Request Current Pricing
               </p>
 
               <h1 className="mt-5 max-w-3xl text-5xl font-black leading-[0.95] tracking-[-0.05em] sm:text-6xl">
-                Send us what you have.
+                Get the pricing you can actually use.
               </h1>
 
               <p className="mt-7 max-w-2xl text-lg leading-8 text-blue-100/80">
-                Upload a completed KAM fabrication form, your own drawing, a
-                blueprint screenshot, PDF, sketch or other project information.
-                We&apos;ll contact you if anything needs clarification.
+                Material and fabrication pricing can change quickly. Rather than
+                publish a price sheet that may already be outdated, KAM provides
+                current pricing directly based on what you need.
               </p>
 
               <div className="mt-9 flex flex-wrap gap-3">
-                {["Drawings", "PDFs", "Photos", "Sketches"].map((item) => (
+                {[
+                  "Current Material Pricing",
+                  "Panel Pricing",
+                  "Fabrication Pricing",
+                  "Accessories",
+                ].map((item) => (
                   <span
                     key={item}
                     className="border border-white/20 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-white/80"
@@ -70,22 +75,23 @@ export default function SubmitOrderPage() {
 
           <div className="relative min-h-[340px] overflow-hidden lg:min-h-[520px]">
             <Image
-              src="/images/product-custom-welded.jpg"
-              alt="Custom fabricated architectural sheet metal component"
+              src="/images/product-trim-profiles.jpg"
+              alt="Custom architectural sheet metal profiles fabricated by KAM"
               fill
               priority
               className="object-cover"
             />
 
-            <div className="absolute inset-0 bg-gradient-to-r from-[#202d61]/55 via-transparent to-transparent lg:block" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#202d61]/55 via-transparent to-transparent" />
 
             <div className="absolute bottom-6 right-6 border-l-4 border-yellow-400 bg-[#0b1024]/90 px-5 py-4 backdrop-blur-sm">
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-yellow-400">
-                Built to Order
+                Current Pricing
               </p>
 
-              <p className="mt-1 text-sm font-bold text-white">
-                Custom fabrication is what we do.
+              <p className="mt-1 max-w-xs text-sm font-bold text-white">
+                Ask for the latest information instead of relying on an old
+                sheet.
               </p>
             </div>
           </div>
@@ -96,9 +102,21 @@ export default function SubmitOrderPage() {
       <section className="border-b border-slate-200 bg-white">
         <div className="kam-container grid md:grid-cols-3">
           {[
-            ["01", "Send It", "Upload your order information and files."],
-            ["02", "We Review It", "Our fabrication team checks the details."],
-            ["03", "We Build It", "We contact you if anything needs clarification."],
+            [
+              "01",
+              "Tell Us Who You Are",
+              "Give us your contact and company information.",
+            ],
+            [
+              "02",
+              "Tell Us What You Need",
+              "Select the pricing categories that apply to your work.",
+            ],
+            [
+              "03",
+              "We Send Current Pricing",
+              "Our team follows up with the appropriate information.",
+            ],
           ].map(([number, title, copy], index) => (
             <div
               key={number}
@@ -137,30 +155,11 @@ export default function SubmitOrderPage() {
 
             <Divider />
 
-            {/* PROJECT */}
+            {/* LOCATION */}
             <div>
-              <p className="kam-eyebrow">Project Information</p>
+              <p className="kam-eyebrow">KAM Location</p>
 
-              <div className="mt-7 grid gap-6 sm:grid-cols-2">
-                <Field label="Project / Job Name" name="projectName" />
-                <Field label="PO Number" name="poNumber" />
-                <Field label="Job Address" name="jobAddress" />
-
-                <Field
-                  label="Requested Completion Date"
-                  name="requestedDate"
-                  type="date"
-                />
-              </div>
-            </div>
-
-            <Divider />
-
-            {/* ORDER DETAILS */}
-            <div>
-              <p className="kam-eyebrow">Order Details</p>
-
-              <div className="mt-7 grid gap-6 sm:grid-cols-2">
+              <div className="mt-7 max-w-xl">
                 <SelectField
                   label="Preferred Location"
                   name="location"
@@ -171,7 +170,52 @@ export default function SubmitOrderPage() {
                     "Not Sure — Route It For Me",
                   ]}
                 />
+              </div>
+            </div>
 
+            <Divider />
+
+            {/* PRICING REQUEST */}
+            <div>
+              <p className="kam-eyebrow">What Pricing Do You Need?</p>
+
+              <div className="mt-7 grid gap-4 sm:grid-cols-2">
+                {[
+                  "Architectural Sheet Metal / Trim",
+                  "Roof Panel Pricing",
+                  "Wall / Soffit Panel Pricing",
+                  "ACM Pricing",
+                  "Gutters / Downspouts",
+                  "Coping / Fascia",
+                  "Accessories / Fasteners",
+                  "Other / Not Sure",
+                ].map((item) => (
+                  <label
+                    key={item}
+                    className="flex cursor-pointer items-center gap-3 border border-slate-200 bg-[#f8f9fa] p-4 transition hover:border-[#202d61]"
+                  >
+                    <input
+                      type="checkbox"
+                      name="pricingType"
+                      value={item}
+                      className="h-4 w-4"
+                    />
+
+                    <span className="text-sm font-bold text-[#111936]">
+                      {item}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <Divider />
+
+            {/* MATERIAL */}
+            <div>
+              <p className="kam-eyebrow">Material Information</p>
+
+              <div className="mt-7 grid gap-6 sm:grid-cols-2">
                 <SelectField
                   label="Material"
                   name="material"
@@ -186,42 +230,41 @@ export default function SubmitOrderPage() {
                   ]}
                 />
 
-                <Field label="Gauge / Thickness" name="gauge" />
                 <Field label="Finish / Color" name="color" />
               </div>
 
               <label className="mt-6 block">
                 <span className="text-sm font-black text-[#111936]">
-                  Order Details / Notes
+                  Additional Details
                 </span>
 
                 <textarea
-                  name="notes"
+                  name="details"
                   rows={7}
                   className="mt-2 w-full border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-[#202d61]"
-                  placeholder="Describe what you need, quantities, dimensions, special instructions or anything else that may help us process your order."
+                  placeholder="Tell us what you're pricing, approximate quantities, project size, preferred panel profile or any other useful information."
                 />
               </label>
             </div>
 
             <Divider />
 
-            {/* FILE UPLOAD */}
+            {/* OPTIONAL FILES */}
             <div>
-              <p className="kam-eyebrow">Files & Drawings</p>
+              <p className="kam-eyebrow">Optional Project Files</p>
 
-              <label className="group mt-7 flex min-h-56 cursor-pointer flex-col items-center justify-center border-2 border-dashed border-slate-300 bg-[#f8f9fa] p-8 text-center transition hover:border-yellow-400 hover:bg-yellow-50/30">
+              <label className="group mt-7 flex min-h-52 cursor-pointer flex-col items-center justify-center border-2 border-dashed border-slate-300 bg-[#f8f9fa] p-8 text-center transition hover:border-yellow-400 hover:bg-yellow-50/30">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#202d61] text-2xl font-black text-white transition group-hover:bg-yellow-400 group-hover:text-[#111936]">
                   ↑
                 </div>
 
                 <span className="mt-5 text-lg font-black text-[#111936]">
-                  Upload drawings, forms, photos or PDFs
+                  Have drawings or takeoff information?
                 </span>
 
                 <span className="mt-3 max-w-lg text-sm leading-6 text-slate-500">
-                  Completed fabrication forms, marked-up blueprints, sketches,
-                  screenshots and other supporting documents are welcome.
+                  Uploading project information can help us understand exactly
+                  what pricing will be most useful to you.
                 </span>
 
                 <span className="mt-4 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
@@ -242,27 +285,11 @@ export default function SubmitOrderPage() {
               </label>
             </div>
 
-            <Divider />
-
-            <label className="flex items-start gap-3">
-              <input
-                type="checkbox"
-                name="contactIfQuestions"
-                defaultChecked
-                className="mt-1 h-4 w-4"
-              />
-
-              <span className="text-sm leading-6 text-slate-600">
-                Please contact me if any dimensions, materials or instructions
-                need clarification before the order is processed.
-              </span>
-            </label>
-
             <button
               type="submit"
-              className="mt-8 w-full rounded-md bg-yellow-400 px-7 py-5 text-sm font-black uppercase tracking-wide text-[#111936] transition hover:-translate-y-0.5 hover:bg-yellow-300"
+              className="mt-10 w-full rounded-md bg-yellow-400 px-7 py-5 text-sm font-black uppercase tracking-wide text-[#111936] transition hover:-translate-y-0.5 hover:bg-yellow-300"
             >
-              Submit Order →
+              Request Current Pricing →
             </button>
 
             <p className="mt-4 text-center text-xs leading-5 text-slate-400">
@@ -273,11 +300,10 @@ export default function SubmitOrderPage() {
 
           {/* SIDEBAR */}
           <aside className="space-y-5">
-            {/* PHOTO */}
             <div className="relative min-h-[260px] overflow-hidden">
               <Image
                 src="/images/product-custom-components.jpg"
-                alt="Custom sheet metal components fabricated by KAM"
+                alt="Custom fabricated architectural sheet metal components"
                 fill
                 className="object-cover"
               />
@@ -286,56 +312,52 @@ export default function SubmitOrderPage() {
 
               <div className="absolute bottom-0 left-0 p-6 text-white">
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-yellow-400">
-                  Real KAM Fabrication
+                  KAM Fabrication
                 </p>
 
                 <p className="mt-2 max-w-xs font-bold leading-6">
-                  From straightforward trim to specialty fabricated components.
+                  Pricing built around the material and fabrication your project
+                  actually requires.
                 </p>
               </div>
             </div>
 
-            {/* NO DRAWING */}
             <div className="bg-[#111936] p-8 text-white">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-yellow-400">
-                Don&apos;t have a formal drawing?
+                Why Request Pricing?
               </p>
 
               <h2 className="mt-5 text-3xl font-black tracking-[-0.04em]">
-                That&apos;s okay.
+                Material costs move.
               </h2>
 
               <p className="mt-5 leading-7 text-slate-300">
-                Send us a hand sketch, screenshot, marked-up blueprint or photo.
-                As long as we can contact you, our team can help work through
-                the remaining details.
+                By requesting current pricing, you avoid estimating from an
+                outdated sheet and give our team the opportunity to provide
+                information that better fits the scope of your project.
               </p>
             </div>
 
-            {/* FORM DOWNLOAD */}
             <div className="border border-slate-200 bg-white p-8">
-              <p className="kam-eyebrow">Need the KAM Form?</p>
+              <p className="kam-eyebrow">Need a Project Quote?</p>
 
               <h2 className="mt-4 text-2xl font-black tracking-[-0.03em]">
-                Download our fabrication order form.
+                Send us the project instead.
               </h2>
 
               <p className="mt-4 text-sm leading-7 text-slate-500">
-                Print it, draw your parts, scan it and upload the completed form
-                here.
+                If you already have drawings or a defined scope, our quote
+                request form may be the faster route.
               </p>
 
-  <a
-  href="/downloads/KAM-Fabrication-Order-Form.pdf"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="mt-6 block w-full border border-[#202d61] px-5 py-4 text-center text-xs font-black uppercase tracking-wide text-[#202d61] transition hover:bg-[#202d61] hover:text-white"
->
-  Open Fabrication Order Form →
-</a>
+              <Link
+                href="/request-quote"
+                className="mt-6 block w-full border border-[#202d61] px-5 py-4 text-center text-xs font-black uppercase tracking-wide text-[#202d61] transition hover:bg-[#202d61] hover:text-white"
+              >
+                Request a Quote →
+              </Link>
             </div>
 
-            {/* CONTACT */}
             <div className="border-t-4 border-yellow-400 bg-white p-8">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
                 Questions?
@@ -343,7 +365,7 @@ export default function SubmitOrderPage() {
 
               <p className="mt-4 text-2xl font-black">913-441-1208</p>
 
-              <p className="mt-3 text-sm text-slate-500">
+              <p className="mt-3 text-sm leading-6 text-slate-500">
                 Monday–Friday
                 <br />
                 6:30 AM–4:30 PM

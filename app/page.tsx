@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 const services = [
   {
@@ -104,26 +105,30 @@ export default function Home() {
             <a className="transition hover:text-yellow-300" href="#services">
               Products
             </a>
+
             <a className="transition hover:text-yellow-300" href="#projects">
               Projects
             </a>
+
             <a className="transition hover:text-yellow-300" href="#capabilities">
               Capabilities
             </a>
+
             <a className="transition hover:text-yellow-300" href="#locations">
               Locations
             </a>
+
             <a className="transition hover:text-yellow-300" href="#contact">
               Contact
             </a>
           </nav>
 
-          <a
-            href="#order"
+          <Link
+            href="/submit-order"
             className="rounded-md bg-yellow-400 px-5 py-3 text-xs font-black uppercase tracking-[0.08em] text-slate-950 transition hover:-translate-y-0.5 hover:bg-yellow-300"
           >
             Submit an Order
-          </a>
+          </Link>
         </div>
       </header>
 
@@ -137,8 +142,8 @@ export default function Home() {
           className="object-cover object-center"
         />
 
-        {/* Brighter overlay than the previous version */}
         <div className="absolute inset-0 bg-[#0c1230]/45" />
+
         <div className="absolute inset-0 bg-gradient-to-r from-[#0b1027]/82 via-[#0b1027]/45 to-[#0b1027]/10" />
 
         <div className="kam-container relative z-10 py-28">
@@ -159,19 +164,19 @@ export default function Home() {
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-              <a
-                href="#order"
+              <Link
+                href="/submit-order"
                 className="rounded-md bg-yellow-400 px-7 py-4 text-center text-sm font-black uppercase tracking-wide text-slate-950 transition hover:-translate-y-1 hover:bg-yellow-300"
               >
                 Submit an Order
-              </a>
+              </Link>
 
-              <a
-                href="#quote"
+              <Link
+                href="/request-quote"
                 className="rounded-md border border-white/35 bg-black/10 px-7 py-4 text-center text-sm font-black uppercase tracking-wide text-white backdrop-blur-sm transition hover:bg-white hover:text-slate-950"
               >
                 Request a Quote
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -203,6 +208,7 @@ export default function Home() {
         <div className="kam-container grid gap-12 lg:grid-cols-[.75fr_1.25fr]">
           <div>
             <p className="kam-eyebrow">Built for the trades</p>
+
             <h2 className="kam-heading">
               Fast when it matters. Precise always.
             </h2>
@@ -231,12 +237,12 @@ export default function Home() {
               From everyday trim to one-of-a-kind fabrication.
             </h2>
 
-            <a
-              href="#order"
+            <Link
+              href="/submit-order"
               className="text-sm font-black uppercase tracking-[0.12em] text-[#202d61]"
             >
               Send Us Your Drawing →
-            </a>
+            </Link>
           </div>
 
           <div className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -495,12 +501,12 @@ export default function Home() {
             </h2>
           </div>
 
-          <a
-            href="mailto:fabricate@kansasarchmetals.com"
+          <Link
+            href="/submit-order"
             className="shrink-0 rounded-md bg-[#111936] px-8 py-5 text-center text-sm font-black uppercase tracking-wide text-white transition hover:-translate-y-1"
           >
             Submit an Order →
-          </a>
+          </Link>
         </div>
       </section>
 

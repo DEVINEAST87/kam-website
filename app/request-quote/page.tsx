@@ -342,6 +342,12 @@ export default function RequestQuotePage() {
                 pricing directly rather than publishing potentially outdated
                 pricing online.
               </p>
+              <Link
+  href="/request-pricing"
+  className="mt-6 block w-full border border-[#202d61] px-5 py-4 text-center text-xs font-black uppercase tracking-wide text-[#202d61] transition hover:bg-[#202d61] hover:text-white"
+>
+  Request Current Pricing →
+</Link>
             </div>
 
             <div className="border border-slate-200 bg-white p-8">
