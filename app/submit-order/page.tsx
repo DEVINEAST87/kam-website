@@ -1,7 +1,175 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import {
+  ChangeEvent,
+  DragEvent,
+  FormEvent,
+  useRef,
+  useState,
+} from "react";
+
+const MAX_UPLOAD_BYTES = 3_500_000;
+
+function formatBytes(bytes: number) {
+  if (bytes === 0) return "0 KB";
+
+  if (bytes < 1_000_000) {
+    return `${Math.max(1, Math.round(bytes / 1000))} KB`;
+  }
+
+  return `${(bytes / 1_000_000).toFixed(2)} MB`;
+}
 
 export default function SubmitOrderPage() {
+  const [status, setStatus] = useState<
+    "idle" | "sending" | "success" | "error"
+  >("idle");
+
+  const [message, setMessage] = useState("");
+  const [referenceNumber, setReferenceNumber] = useState("");
+
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [fileError, setFileError] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const totalFileBytes = selectedFiles.reduce(
+    (total, file) => total + file.size,
+    0
+  );
+
+  function addFiles(incomingFiles: File[]) {
+    setFileError("");
+
+    const validFiles = incomingFiles.filter((file) => file.size > 0);
+
+    if (validFiles.length === 0) {
+      return;
+    }
+
+    const existingNames = new Set(
+      selectedFiles.map((file) => `${file.name}-${file.size}`)
+    );
+
+    const newFiles = validFiles.filter(
+      (file) => !existingNames.has(`${file.name}-${file.size}`)
+    );
+
+    const combined = [...selectedFiles, ...newFiles];
+
+    const combinedSize = combined.reduce(
+      (total, file) => total + file.size,
+      0
+    );
+
+    if (combinedSize > MAX_UPLOAD_BYTES) {
+      setFileError(
+        "The combined upload is too large. Please keep all files under about 3.5 MB total for this first version."
+      );
+      return;
+    }
+
+    setSelectedFiles(combined);
+  }
+
+  function handleFileInput(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    addFiles(files);
+
+    // Allows the same file to be selected again later if it was removed.
+    event.target.value = "";
+  }
+
+  function handleDragOver(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setIsDragging(true);
+  }
+
+  function handleDragLeave(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setIsDragging(false);
+  }
+
+  function handleDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setIsDragging(false);
+
+    const files = Array.from(event.dataTransfer.files ?? []);
+    addFiles(files);
+  }
+
+  function removeFile(indexToRemove: number) {
+    setSelectedFiles((current) =>
+      current.filter((_, index) => index !== indexToRemove)
+    );
+
+    setFileError("");
+  }
+
+  function clearFiles() {
+    setSelectedFiles([]);
+    setFileError("");
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    setStatus("sending");
+    setMessage("");
+    setReferenceNumber("");
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    // We manage attachments ourselves so dragged files are included too.
+    formData.delete("attachments");
+
+    for (const file of selectedFiles) {
+      formData.append("attachments", file);
+    }
+
+    if (totalFileBytes > MAX_UPLOAD_BYTES) {
+      setStatus("error");
+      setMessage(
+        "Your attached files are too large. Please keep the combined upload under about 3.5 MB."
+      );
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/submit-order", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        setStatus("error");
+        setMessage(
+          result.message ||
+            "Your order could not be submitted. Please try again."
+        );
+        return;
+      }
+
+      setStatus("success");
+      setReferenceNumber(result.referenceNumber);
+      setMessage("Your order information was submitted successfully.");
+
+      form.reset();
+      clearFiles();
+    } catch {
+      setStatus("error");
+      setMessage(
+        "We could not connect to the submission service. Please try again."
+      );
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[#f4f6f8] text-[#111936]">
       {/* HEADER */}
@@ -36,7 +204,7 @@ export default function SubmitOrderPage() {
         </div>
       </header>
 
-      {/* SPLIT HERO */}
+      {/* HERO */}
       <section className="bg-[#202d61] text-white">
         <div className="grid lg:grid-cols-[1.15fr_.85fr]">
           <div className="flex items-center">
@@ -77,7 +245,7 @@ export default function SubmitOrderPage() {
               className="object-cover"
             />
 
-            <div className="absolute inset-0 bg-gradient-to-r from-[#202d61]/55 via-transparent to-transparent lg:block" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#202d61]/55 via-transparent to-transparent" />
 
             <div className="absolute bottom-6 right-6 border-l-4 border-yellow-400 bg-[#0b1024]/90 px-5 py-4 backdrop-blur-sm">
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-yellow-400">
@@ -92,13 +260,17 @@ export default function SubmitOrderPage() {
         </div>
       </section>
 
-      {/* PROCESS STRIP */}
+      {/* PROCESS */}
       <section className="border-b border-slate-200 bg-white">
         <div className="kam-container grid md:grid-cols-3">
           {[
             ["01", "Send It", "Upload your order information and files."],
             ["02", "We Review It", "Our fabrication team checks the details."],
-            ["03", "We Build It", "We contact you if anything needs clarification."],
+            [
+              "03",
+              "We Build It",
+              "We contact you if anything needs clarification.",
+            ],
           ].map(([number, title, copy], index) => (
             <div
               key={number}
@@ -122,7 +294,11 @@ export default function SubmitOrderPage() {
       {/* FORM */}
       <section className="kam-section">
         <div className="kam-container grid gap-10 lg:grid-cols-[1.35fr_.65fr]">
-          <form className="border border-slate-200 bg-white p-7 shadow-sm sm:p-10">
+          <form
+            onSubmit={handleSubmit}
+            encType="multipart/form-data"
+            className="border border-slate-200 bg-white p-7 shadow-sm sm:p-10"
+          >
             {/* CONTACT */}
             <div>
               <p className="kam-eyebrow">Contact Information</p>
@@ -208,15 +384,52 @@ export default function SubmitOrderPage() {
 
             {/* FILE UPLOAD */}
             <div>
-              <p className="kam-eyebrow">Files & Drawings</p>
+              <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+                <div>
+                  <p className="kam-eyebrow">Files & Drawings</p>
 
-              <label className="group mt-7 flex min-h-56 cursor-pointer flex-col items-center justify-center border-2 border-dashed border-slate-300 bg-[#f8f9fa] p-8 text-center transition hover:border-yellow-400 hover:bg-yellow-50/30">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#202d61] text-2xl font-black text-white transition group-hover:bg-yellow-400 group-hover:text-[#111936]">
+                  <p className="mt-3 text-sm leading-6 text-slate-500">
+                    Drag files into the box or choose them from your computer.
+                  </p>
+                </div>
+
+                <p
+                  className={`text-xs font-black ${
+                    totalFileBytes > MAX_UPLOAD_BYTES
+                      ? "text-red-600"
+                      : "text-slate-400"
+                  }`}
+                >
+                  {formatBytes(totalFileBytes)} / 3.5 MB
+                </p>
+              </div>
+
+              <div
+                onDragOver={handleDragOver}
+                onDragEnter={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`group mt-7 flex min-h-56 cursor-pointer flex-col items-center justify-center border-2 border-dashed p-8 text-center transition ${
+                  isDragging
+                    ? "border-yellow-400 bg-yellow-50"
+                    : "border-slate-300 bg-[#f8f9fa] hover:border-yellow-400 hover:bg-yellow-50/30"
+                }`}
+              >
+                <div
+                  className={`flex h-14 w-14 items-center justify-center rounded-full text-2xl font-black transition ${
+                    isDragging
+                      ? "bg-yellow-400 text-[#111936]"
+                      : "bg-[#202d61] text-white group-hover:bg-yellow-400 group-hover:text-[#111936]"
+                  }`}
+                >
                   ↑
                 </div>
 
                 <span className="mt-5 text-lg font-black text-[#111936]">
-                  Upload drawings, forms, photos or PDFs
+                  {isDragging
+                    ? "Drop your files here"
+                    : "Upload drawings, forms, photos or PDFs"}
                 </span>
 
                 <span className="mt-3 max-w-lg text-sm leading-6 text-slate-500">
@@ -233,13 +446,80 @@ export default function SubmitOrderPage() {
                 </span>
 
                 <input
+                  ref={fileInputRef}
                   type="file"
-                  name="attachments"
                   multiple
                   className="hidden"
                   accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx"
+                  onChange={handleFileInput}
                 />
-              </label>
+              </div>
+
+              {fileError && (
+                <div className="mt-4 border-l-4 border-red-500 bg-red-50 p-4">
+                  <p className="text-sm font-bold text-red-800">{fileError}</p>
+                </div>
+              )}
+
+              {selectedFiles.length > 0 && (
+                <div className="mt-6 overflow-hidden border border-slate-200 bg-white">
+                  <div className="flex items-center justify-between border-b border-slate-200 bg-[#f8f9fa] px-5 py-4">
+                    <div>
+                      <p className="text-sm font-black text-[#111936]">
+                        {selectedFiles.length}{" "}
+                        {selectedFiles.length === 1 ? "file" : "files"} selected
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-500">
+                        {formatBytes(totalFileBytes)} total
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={clearFiles}
+                      className="text-xs font-black uppercase tracking-[0.1em] text-slate-500 transition hover:text-red-600"
+                    >
+                      Remove All
+                    </button>
+                  </div>
+
+                  <div className="divide-y divide-slate-200">
+                    {selectedFiles.map((file, index) => (
+                      <div
+                        key={`${file.name}-${file.size}-${index}`}
+                        className="flex items-center justify-between gap-5 px-5 py-4"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-50 text-sm font-black text-green-700">
+                              ✓
+                            </div>
+
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-bold text-[#111936]">
+                                {file.name}
+                              </p>
+
+                              <p className="mt-1 text-xs text-slate-400">
+                                {formatBytes(file.size)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => removeFile(index)}
+                          className="shrink-0 text-xs font-black uppercase tracking-[0.08em] text-slate-400 transition hover:text-red-600"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <Divider />
@@ -258,22 +538,41 @@ export default function SubmitOrderPage() {
               </span>
             </label>
 
+            {status === "success" && (
+              <div className="mt-8 border-l-4 border-green-500 bg-green-50 p-5">
+                <p className="font-black text-green-900">Order received.</p>
+
+                <p className="mt-2 text-sm text-green-800">{message}</p>
+
+                {referenceNumber && (
+                  <p className="mt-3 text-sm font-black text-green-900">
+                    Reference: {referenceNumber}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {status === "error" && (
+              <div className="mt-8 border-l-4 border-red-500 bg-red-50 p-5">
+                <p className="font-black text-red-900">
+                  We couldn&apos;t submit your order.
+                </p>
+
+                <p className="mt-2 text-sm text-red-800">{message}</p>
+              </div>
+            )}
+
             <button
               type="submit"
-              className="mt-8 w-full rounded-md bg-yellow-400 px-7 py-5 text-sm font-black uppercase tracking-wide text-[#111936] transition hover:-translate-y-0.5 hover:bg-yellow-300"
+              disabled={status === "sending"}
+              className="mt-8 w-full rounded-md bg-yellow-400 px-7 py-5 text-sm font-black uppercase tracking-wide text-[#111936] transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Submit Order →
+              {status === "sending" ? "Sending Order..." : "Submit Order →"}
             </button>
-
-            <p className="mt-4 text-center text-xs leading-5 text-slate-400">
-              The form is currently in design/testing mode. Email delivery will
-              be connected before launch.
-            </p>
           </form>
 
           {/* SIDEBAR */}
           <aside className="space-y-5">
-            {/* PHOTO */}
             <div className="relative min-h-[260px] overflow-hidden">
               <Image
                 src="/images/product-custom-components.jpg"
@@ -295,7 +594,6 @@ export default function SubmitOrderPage() {
               </div>
             </div>
 
-            {/* NO DRAWING */}
             <div className="bg-[#111936] p-8 text-white">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-yellow-400">
                 Don&apos;t have a formal drawing?
@@ -312,7 +610,6 @@ export default function SubmitOrderPage() {
               </p>
             </div>
 
-            {/* FORM DOWNLOAD */}
             <div className="border border-slate-200 bg-white p-8">
               <p className="kam-eyebrow">Need the KAM Form?</p>
 
@@ -325,17 +622,16 @@ export default function SubmitOrderPage() {
                 here.
               </p>
 
-  <a
-  href="/downloads/KAM-Fabrication-Order-Form.pdf"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="mt-6 block w-full border border-[#202d61] px-5 py-4 text-center text-xs font-black uppercase tracking-wide text-[#202d61] transition hover:bg-[#202d61] hover:text-white"
->
-  Open Fabrication Order Form →
-</a>
+              <a
+                href="/downloads/KAM-Fabrication-Order-Form.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-6 block w-full border border-[#202d61] px-5 py-4 text-center text-xs font-black uppercase tracking-wide text-[#202d61] transition hover:bg-[#202d61] hover:text-white"
+              >
+                Open Fabrication Order Form →
+              </a>
             </div>
 
-            {/* CONTACT */}
             <div className="border-t-4 border-yellow-400 bg-white p-8">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
                 Questions?
@@ -350,27 +646,6 @@ export default function SubmitOrderPage() {
               </p>
             </div>
           </aside>
-        </div>
-      </section>
-
-      {/* BOTTOM TRUST STRIP */}
-      <section className="bg-[#111936] py-10 text-white">
-        <div className="kam-container flex flex-col justify-between gap-5 md:flex-row md:items-center">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-yellow-400">
-              Kansas Architectural Metals
-            </p>
-
-            <p className="mt-2 text-xl font-black">
-              Architectural Metals. Built by Pros.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-x-8 gap-y-2 text-xs font-bold uppercase tracking-[0.1em] text-slate-400">
-            <span>Wichita</span>
-            <span>Shawnee</span>
-            <span>Topeka</span>
-          </div>
         </div>
       </section>
     </main>
