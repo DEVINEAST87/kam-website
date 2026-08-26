@@ -1,10 +1,172 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import {
+  ChangeEvent,
+  DragEvent,
+  FormEvent,
+  useRef,
+  useState,
+} from "react";
+
+const MAX_UPLOAD_BYTES = 3_500_000;
+
+function formatBytes(bytes: number) {
+  if (bytes === 0) return "0 KB";
+
+  if (bytes < 1_000_000) {
+    return `${Math.max(1, Math.round(bytes / 1000))} KB`;
+  }
+
+  return `${(bytes / 1_000_000).toFixed(2)} MB`;
+}
 
 export default function RequestPricingPage() {
+  const [status, setStatus] = useState<
+    "idle" | "sending" | "success" | "error"
+  >("idle");
+
+  const [message, setMessage] = useState("");
+  const [referenceNumber, setReferenceNumber] = useState("");
+
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [fileError, setFileError] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const totalFileBytes = selectedFiles.reduce(
+    (total, file) => total + file.size,
+    0
+  );
+
+  function addFiles(incomingFiles: File[]) {
+    setFileError("");
+
+    const validFiles = incomingFiles.filter((file) => file.size > 0);
+
+    if (validFiles.length === 0) return;
+
+    const existingNames = new Set(
+      selectedFiles.map((file) => `${file.name}-${file.size}`)
+    );
+
+    const newFiles = validFiles.filter(
+      (file) => !existingNames.has(`${file.name}-${file.size}`)
+    );
+
+    const combined = [...selectedFiles, ...newFiles];
+
+    const combinedSize = combined.reduce(
+      (total, file) => total + file.size,
+      0
+    );
+
+    if (combinedSize > MAX_UPLOAD_BYTES) {
+      setFileError(
+        "The combined upload is too large. Please keep all files under about 3.5 MB total for this first version."
+      );
+      return;
+    }
+
+    setSelectedFiles(combined);
+  }
+
+  function handleFileInput(event: ChangeEvent<HTMLInputElement>) {
+    addFiles(Array.from(event.target.files ?? []));
+    event.target.value = "";
+  }
+
+  function handleDragOver(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setIsDragging(true);
+  }
+
+  function handleDragLeave(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setIsDragging(false);
+  }
+
+  function handleDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setIsDragging(false);
+
+    addFiles(Array.from(event.dataTransfer.files ?? []));
+  }
+
+  function removeFile(indexToRemove: number) {
+    setSelectedFiles((current) =>
+      current.filter((_, index) => index !== indexToRemove)
+    );
+
+    setFileError("");
+  }
+
+  function clearFiles() {
+    setSelectedFiles([]);
+    setFileError("");
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    setStatus("sending");
+    setMessage("");
+    setReferenceNumber("");
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    formData.delete("attachments");
+
+    for (const file of selectedFiles) {
+      formData.append("attachments", file);
+    }
+
+    if (totalFileBytes > MAX_UPLOAD_BYTES) {
+      setStatus("error");
+      setMessage(
+        "Your attached files are too large. Please keep the combined upload under about 3.5 MB."
+      );
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/request-pricing", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        setStatus("error");
+        setMessage(
+          result.message ||
+            "Your pricing request could not be submitted. Please try again."
+        );
+        return;
+      }
+
+      setStatus("success");
+      setReferenceNumber(result.referenceNumber);
+      setMessage(
+        "Your request for current pricing was submitted successfully."
+      );
+
+      form.reset();
+      clearFiles();
+    } catch {
+      setStatus("error");
+      setMessage(
+        "We could not connect to the submission service. Please try again."
+      );
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[#f4f6f8] text-[#111936]">
-      {/* HEADER */}
       <header className="bg-[#0b1024] text-white">
         <div className="kam-container flex min-h-20 items-center justify-between gap-6 py-4">
           <Link href="/" className="flex items-center">
@@ -36,7 +198,6 @@ export default function RequestPricingPage() {
         </div>
       </header>
 
-      {/* SPLIT HERO */}
       <section className="bg-[#202d61] text-white">
         <div className="grid lg:grid-cols-[1.15fr_.85fr]">
           <div className="flex items-center">
@@ -54,22 +215,6 @@ export default function RequestPricingPage() {
                 publish a price sheet that may already be outdated, KAM provides
                 current pricing directly based on what you need.
               </p>
-
-              <div className="mt-9 flex flex-wrap gap-3">
-                {[
-                  "Current Material Pricing",
-                  "Panel Pricing",
-                  "Fabrication Pricing",
-                  "Accessories",
-                ].map((item) => (
-                  <span
-                    key={item}
-                    className="border border-white/20 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-white/80"
-                  >
-                    {item}
-                  </span>
-                ))}
-              </div>
             </div>
           </div>
 
@@ -83,22 +228,10 @@ export default function RequestPricingPage() {
             />
 
             <div className="absolute inset-0 bg-gradient-to-r from-[#202d61]/55 via-transparent to-transparent" />
-
-            <div className="absolute bottom-6 right-6 border-l-4 border-yellow-400 bg-[#0b1024]/90 px-5 py-4 backdrop-blur-sm">
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-yellow-400">
-                Current Pricing
-              </p>
-
-              <p className="mt-1 max-w-xs text-sm font-bold text-white">
-                Ask for the latest information instead of relying on an old
-                sheet.
-              </p>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* PROCESS STRIP */}
       <section className="border-b border-slate-200 bg-white">
         <div className="kam-container grid md:grid-cols-3">
           {[
@@ -130,18 +263,22 @@ export default function RequestPricingPage() {
 
               <div>
                 <p className="font-black text-[#111936]">{title}</p>
-                <p className="mt-1 text-sm leading-6 text-slate-500">{copy}</p>
+                <p className="mt-1 text-sm leading-6 text-slate-500">
+                  {copy}
+                </p>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* FORM */}
       <section className="kam-section">
         <div className="kam-container grid gap-10 lg:grid-cols-[1.35fr_.65fr]">
-          <form className="border border-slate-200 bg-white p-7 shadow-sm sm:p-10">
-            {/* CONTACT */}
+          <form
+            onSubmit={handleSubmit}
+            encType="multipart/form-data"
+            className="border border-slate-200 bg-white p-7 shadow-sm sm:p-10"
+          >
             <div>
               <p className="kam-eyebrow">Contact Information</p>
 
@@ -155,7 +292,6 @@ export default function RequestPricingPage() {
 
             <Divider />
 
-            {/* LOCATION */}
             <div>
               <p className="kam-eyebrow">KAM Location</p>
 
@@ -175,7 +311,6 @@ export default function RequestPricingPage() {
 
             <Divider />
 
-            {/* PRICING REQUEST */}
             <div>
               <p className="kam-eyebrow">What Pricing Do You Need?</p>
 
@@ -211,7 +346,6 @@ export default function RequestPricingPage() {
 
             <Divider />
 
-            {/* MATERIAL */}
             <div>
               <p className="kam-eyebrow">Material Information</p>
 
@@ -249,17 +383,40 @@ export default function RequestPricingPage() {
 
             <Divider />
 
-            {/* OPTIONAL FILES */}
             <div>
-              <p className="kam-eyebrow">Optional Project Files</p>
+              <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+                <div>
+                  <p className="kam-eyebrow">Optional Project Files</p>
+                  <p className="mt-3 text-sm leading-6 text-slate-500">
+                    Drag files into the box or choose them from your computer.
+                  </p>
+                </div>
 
-              <label className="group mt-7 flex min-h-52 cursor-pointer flex-col items-center justify-center border-2 border-dashed border-slate-300 bg-[#f8f9fa] p-8 text-center transition hover:border-yellow-400 hover:bg-yellow-50/30">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#202d61] text-2xl font-black text-white transition group-hover:bg-yellow-400 group-hover:text-[#111936]">
+                <p className="text-xs font-black text-slate-400">
+                  {formatBytes(totalFileBytes)} / 3.5 MB
+                </p>
+              </div>
+
+              <div
+                onDragOver={handleDragOver}
+                onDragEnter={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`group mt-7 flex min-h-56 cursor-pointer flex-col items-center justify-center border-2 border-dashed p-8 text-center transition ${
+                  isDragging
+                    ? "border-yellow-400 bg-yellow-50"
+                    : "border-slate-300 bg-[#f8f9fa] hover:border-yellow-400 hover:bg-yellow-50/30"
+                }`}
+              >
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#202d61] text-2xl font-black text-white">
                   ↑
                 </div>
 
                 <span className="mt-5 text-lg font-black text-[#111936]">
-                  Have drawings or takeoff information?
+                  {isDragging
+                    ? "Drop your files here"
+                    : "Have drawings or takeoff information?"}
                 </span>
 
                 <span className="mt-3 max-w-lg text-sm leading-6 text-slate-500">
@@ -267,132 +424,141 @@ export default function RequestPricingPage() {
                   what pricing will be most useful to you.
                 </span>
 
-                <span className="mt-4 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
-                  PDF • JPG • PNG • WEBP • WORD • EXCEL
-                </span>
-
-                <span className="mt-6 rounded-md bg-[#202d61] px-6 py-3 text-xs font-black uppercase tracking-wide text-white transition group-hover:bg-[#111936]">
+                <span className="mt-6 rounded-md bg-[#202d61] px-6 py-3 text-xs font-black uppercase tracking-wide text-white">
                   Choose Files
                 </span>
 
                 <input
+                  ref={fileInputRef}
                   type="file"
-                  name="attachments"
                   multiple
                   className="hidden"
                   accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx"
+                  onChange={handleFileInput}
                 />
-              </label>
+              </div>
+
+              {fileError && (
+                <div className="mt-4 border-l-4 border-red-500 bg-red-50 p-4">
+                  <p className="text-sm font-bold text-red-800">
+                    {fileError}
+                  </p>
+                </div>
+              )}
+
+              {selectedFiles.length > 0 && (
+                <div className="mt-6 overflow-hidden border border-slate-200 bg-white">
+                  <div className="flex items-center justify-between border-b border-slate-200 bg-[#f8f9fa] px-5 py-4">
+                    <p className="text-sm font-black">
+                      {selectedFiles.length}{" "}
+                      {selectedFiles.length === 1 ? "file" : "files"} selected
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={clearFiles}
+                      className="text-xs font-black uppercase text-slate-500 hover:text-red-600"
+                    >
+                      Remove All
+                    </button>
+                  </div>
+
+                  {selectedFiles.map((file, index) => (
+                    <div
+                      key={`${file.name}-${index}`}
+                      className="flex items-center justify-between border-t border-slate-200 px-5 py-4 first:border-t-0"
+                    >
+                      <div>
+                        <p className="text-sm font-bold">
+                          ✓ {file.name}
+                        </p>
+
+                        <p className="mt-1 text-xs text-slate-400">
+                          {formatBytes(file.size)}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removeFile(index)}
+                        className="text-xs font-black uppercase text-slate-400 hover:text-red-600"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
+
+            {status === "success" && (
+              <div className="mt-8 border-l-4 border-green-500 bg-green-50 p-5">
+                <p className="font-black text-green-900">
+                  Pricing request received.
+                </p>
+
+                <p className="mt-2 text-sm text-green-800">
+                  {message}
+                </p>
+
+                {referenceNumber && (
+                  <p className="mt-3 text-sm font-black text-green-900">
+                    Reference: {referenceNumber}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {status === "error" && (
+              <div className="mt-8 border-l-4 border-red-500 bg-red-50 p-5">
+                <p className="font-black text-red-900">
+                  We couldn&apos;t submit your pricing request.
+                </p>
+
+                <p className="mt-2 text-sm text-red-800">
+                  {message}
+                </p>
+              </div>
+            )}
 
             <button
               type="submit"
-              className="mt-10 w-full rounded-md bg-yellow-400 px-7 py-5 text-sm font-black uppercase tracking-wide text-[#111936] transition hover:-translate-y-0.5 hover:bg-yellow-300"
+              disabled={status === "sending"}
+              className="mt-10 w-full rounded-md bg-yellow-400 px-7 py-5 text-sm font-black uppercase tracking-wide text-[#111936] transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Request Current Pricing →
+              {status === "sending"
+                ? "Sending Pricing Request..."
+                : "Request Current Pricing →"}
             </button>
-
-            <p className="mt-4 text-center text-xs leading-5 text-slate-400">
-              The form is currently in design/testing mode. Email delivery will
-              be connected before launch.
-            </p>
           </form>
 
-          {/* SIDEBAR */}
           <aside className="space-y-5">
-            <div className="relative min-h-[260px] overflow-hidden">
-              <Image
-                src="/images/product-custom-components.jpg"
-                alt="Custom fabricated architectural sheet metal components"
-                fill
-                className="object-cover"
-              />
-
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0b1024]/85 via-transparent to-transparent" />
-
-              <div className="absolute bottom-0 left-0 p-6 text-white">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-yellow-400">
-                  KAM Fabrication
-                </p>
-
-                <p className="mt-2 max-w-xs font-bold leading-6">
-                  Pricing built around the material and fabrication your project
-                  actually requires.
-                </p>
-              </div>
-            </div>
-
             <div className="bg-[#111936] p-8 text-white">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-yellow-400">
                 Why Request Pricing?
               </p>
 
-              <h2 className="mt-5 text-3xl font-black tracking-[-0.04em]">
+              <h2 className="mt-5 text-3xl font-black">
                 Material costs move.
               </h2>
 
               <p className="mt-5 leading-7 text-slate-300">
-                By requesting current pricing, you avoid estimating from an
-                outdated sheet and give our team the opportunity to provide
-                information that better fits the scope of your project.
+                Requesting current pricing helps prevent estimates from being
+                based on outdated information.
               </p>
             </div>
 
             <div className="border border-slate-200 bg-white p-8">
               <p className="kam-eyebrow">Need a Project Quote?</p>
 
-              <h2 className="mt-4 text-2xl font-black tracking-[-0.03em]">
-                Send us the project instead.
-              </h2>
-
-              <p className="mt-4 text-sm leading-7 text-slate-500">
-                If you already have drawings or a defined scope, our quote
-                request form may be the faster route.
-              </p>
-
               <Link
                 href="/request-quote"
-                className="mt-6 block w-full border border-[#202d61] px-5 py-4 text-center text-xs font-black uppercase tracking-wide text-[#202d61] transition hover:bg-[#202d61] hover:text-white"
+                className="mt-6 block w-full border border-[#202d61] px-5 py-4 text-center text-xs font-black uppercase tracking-wide text-[#202d61]"
               >
                 Request a Quote →
               </Link>
             </div>
-
-            <div className="border-t-4 border-yellow-400 bg-white p-8">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
-                Questions?
-              </p>
-
-              <p className="mt-4 text-2xl font-black">913-441-1208</p>
-
-              <p className="mt-3 text-sm leading-6 text-slate-500">
-                Monday–Friday
-                <br />
-                6:30 AM–4:30 PM
-              </p>
-            </div>
           </aside>
-        </div>
-      </section>
-
-      {/* BOTTOM TRUST STRIP */}
-      <section className="bg-[#111936] py-10 text-white">
-        <div className="kam-container flex flex-col justify-between gap-5 md:flex-row md:items-center">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-yellow-400">
-              Kansas Architectural Metals
-            </p>
-
-            <p className="mt-2 text-xl font-black">
-              Architectural Metals. Built by Pros.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-x-8 gap-y-2 text-xs font-bold uppercase tracking-[0.1em] text-slate-400">
-            <span>Wichita</span>
-            <span>Shawnee</span>
-            <span>Topeka</span>
-          </div>
         </div>
       </section>
     </main>
@@ -442,7 +608,9 @@ function SelectField({
 }) {
   return (
     <label className="block">
-      <span className="text-sm font-black text-[#111936]">{label}</span>
+      <span className="text-sm font-black text-[#111936]">
+        {label}
+      </span>
 
       <select
         name={name}
