@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 
 const services = [
   {
@@ -85,22 +88,29 @@ const locations = [
 ];
 
 export default function Home() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  function closeMenu() {
+    setMenuOpen(false);
+  }
+
   return (
     <main className="overflow-hidden bg-white">
       {/* HEADER */}
       <header className="absolute inset-x-0 top-0 z-50 border-b border-white/15">
-        <div className="kam-container flex h-24 items-center justify-between">
-          <a href="#" className="flex items-center">
+        <div className="kam-container flex h-20 items-center justify-between sm:h-24">
+          <Link href="/" className="flex items-center" onClick={closeMenu}>
             <Image
               src="/logos/kam-logo-horizontal.png"
               alt="Kansas Architectural Metals"
               width={250}
               height={80}
               priority
-              className="h-auto w-[180px] object-contain brightness-0 invert sm:w-[230px]"
+              className="h-auto w-[150px] object-contain brightness-0 invert sm:w-[230px]"
             />
-          </a>
+          </Link>
 
+          {/* DESKTOP NAV */}
           <nav className="hidden items-center gap-7 text-sm font-bold text-white lg:flex">
             <a className="transition hover:text-yellow-300" href="#services">
               Products
@@ -123,17 +133,85 @@ export default function Home() {
             </a>
           </nav>
 
+          {/* DESKTOP CTA */}
           <Link
             href="/submit-order"
-            className="rounded-md bg-yellow-400 px-5 py-3 text-xs font-black uppercase tracking-[0.08em] text-slate-950 transition hover:-translate-y-0.5 hover:bg-yellow-300"
+            className="hidden rounded-md bg-yellow-400 px-5 py-3 text-xs font-black uppercase tracking-[0.08em] text-slate-950 transition hover:-translate-y-0.5 hover:bg-yellow-300 sm:block"
           >
             Submit an Order
           </Link>
+
+          {/* MOBILE MENU BUTTON */}
+          <button
+            type="button"
+            aria-label="Toggle navigation menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((current) => !current)}
+            className="flex h-11 w-11 items-center justify-center border border-white/30 bg-black/10 text-white backdrop-blur-sm sm:hidden"
+          >
+            <div className="space-y-1.5">
+              <span
+                className={`block h-0.5 w-5 bg-white transition ${
+                  menuOpen ? "translate-y-2 rotate-45" : ""
+                }`}
+              />
+              <span
+                className={`block h-0.5 w-5 bg-white transition ${
+                  menuOpen ? "opacity-0" : ""
+                }`}
+              />
+              <span
+                className={`block h-0.5 w-5 bg-white transition ${
+                  menuOpen ? "-translate-y-2 -rotate-45" : ""
+                }`}
+              />
+            </div>
+          </button>
         </div>
+
+        {/* MOBILE MENU */}
+        {menuOpen && (
+          <div className="border-t border-white/10 bg-[#0b1024]/98 px-5 py-6 text-white backdrop-blur-md sm:hidden">
+            <nav className="mx-auto flex max-w-xl flex-col">
+              {[
+                ["Products", "#services"],
+                ["Projects", "#projects"],
+                ["Capabilities", "#capabilities"],
+                ["Locations", "#locations"],
+                ["Contact", "#contact"],
+              ].map(([label, href]) => (
+                <a
+                  key={label}
+                  href={href}
+                  onClick={closeMenu}
+                  className="border-b border-white/10 py-4 text-base font-black"
+                >
+                  {label}
+                </a>
+              ))}
+
+              <Link
+                href="/request-quote"
+                onClick={closeMenu}
+                className="mt-5 border border-white/30 px-5 py-4 text-center text-sm font-black uppercase tracking-wide"
+              >
+                Request a Quote
+              </Link>
+
+              <Link
+                href="/submit-order"
+                onClick={closeMenu}
+                className="mt-3 bg-yellow-400 px-5 py-4 text-center text-sm font-black uppercase tracking-wide text-[#111936]"
+              >
+                Submit an Order
+              </Link>
+            </nav>
+          </div>
+        )}
       </header>
 
       {/* HERO */}
-      <section className="relative flex min-h-[780px] items-center overflow-hidden bg-[#101733] pt-24 text-white">
+      <section className="relative flex min-h-[720px] items-center overflow-hidden bg-[#101733] pt-20 text-white sm:min-h-[780px] sm:pt-24">
         <Image
           src="/images/hero-commercial.jpg"
           alt="Kansas Architectural Metals commercial architectural metal project"
@@ -142,28 +220,28 @@ export default function Home() {
           className="object-cover object-center"
         />
 
-        <div className="absolute inset-0 bg-[#0c1230]/45" />
+        <div className="absolute inset-0 bg-[#0c1230]/50 sm:bg-[#0c1230]/45" />
 
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0b1027]/82 via-[#0b1027]/45 to-[#0b1027]/10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0b1027]/90 via-[#0b1027]/60 to-[#0b1027]/20 sm:from-[#0b1027]/82 sm:via-[#0b1027]/45 sm:to-[#0b1027]/10" />
 
-        <div className="kam-container relative z-10 py-28">
+        <div className="kam-container relative z-10 py-24 sm:py-28">
           <div className="max-w-4xl">
-            <p className="mb-6 text-xs font-black uppercase tracking-[0.32em] text-yellow-400">
+            <p className="mb-5 text-[10px] font-black uppercase tracking-[0.24em] text-yellow-400 sm:mb-6 sm:text-xs sm:tracking-[0.32em]">
               Kansas Architectural Metals
             </p>
 
-            <h1 className="text-5xl font-black leading-[0.95] tracking-[-0.055em] sm:text-6xl lg:text-8xl">
+            <h1 className="max-w-[900px] text-[3rem] font-black leading-[0.92] tracking-[-0.055em] sm:text-6xl lg:text-8xl">
               Architectural Metals.
               <span className="block text-white/95">Built by Pros.</span>
             </h1>
 
-            <p className="mt-8 max-w-2xl text-lg leading-8 text-slate-200">
+            <p className="mt-7 max-w-2xl text-base leading-7 text-slate-200 sm:mt-8 sm:text-lg sm:leading-8">
               Precision architectural sheet metal fabrication with the
               experience, capabilities and turnaround contractors need to keep
               projects moving.
             </p>
 
-            <div className="mt-10 flex flex-col gap-4 sm:flex-row">
+            <div className="mt-9 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:gap-4">
               <Link
                 href="/submit-order"
                 className="rounded-md bg-yellow-400 px-7 py-4 text-center text-sm font-black uppercase tracking-wide text-slate-950 transition hover:-translate-y-1 hover:bg-yellow-300"
@@ -195,7 +273,7 @@ export default function Home() {
           ].map((item) => (
             <div
               key={item}
-              className="flex min-h-28 items-center justify-center px-4 text-center text-xs font-black uppercase tracking-[0.12em] text-[#202d61]"
+              className="flex min-h-24 items-center justify-center px-3 text-center text-[11px] font-black uppercase tracking-[0.1em] text-[#202d61] sm:min-h-28 sm:px-4 sm:text-xs sm:tracking-[0.12em]"
             >
               {item}
             </div>
@@ -205,7 +283,7 @@ export default function Home() {
 
       {/* INTRO */}
       <section className="kam-section">
-        <div className="kam-container grid gap-12 lg:grid-cols-[.75fr_1.25fr]">
+        <div className="kam-container grid gap-10 lg:grid-cols-[.75fr_1.25fr] lg:gap-12">
           <div>
             <p className="kam-eyebrow">Built for the trades</p>
 
@@ -215,7 +293,7 @@ export default function Home() {
           </div>
 
           <div className="self-end">
-            <p className="kam-copy max-w-3xl text-lg">
+            <p className="kam-copy max-w-3xl text-base sm:text-lg">
               Kansas Architectural Metals combines decades of architectural
               sheet metal experience with modern fabrication capabilities
               across three Kansas locations. Whether you need a simple flashing,
@@ -245,13 +323,13 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid gap-5 sm:mt-14 md:grid-cols-2 lg:grid-cols-3">
             {services.map((service) => (
               <article
                 key={service.title}
                 className="group overflow-hidden border border-slate-200 bg-white transition duration-300 hover:-translate-y-1 hover:shadow-xl"
               >
-                <div className="relative h-56 overflow-hidden">
+                <div className="relative h-52 overflow-hidden sm:h-56">
                   <Image
                     src={service.image}
                     alt={service.title}
@@ -266,7 +344,7 @@ export default function Home() {
                   </span>
                 </div>
 
-                <div className="p-7">
+                <div className="p-6 sm:p-7">
                   <h3 className="text-2xl font-black tracking-[-0.03em] text-[#111936]">
                     {service.title}
                   </h3>
@@ -296,12 +374,12 @@ export default function Home() {
             Professional fabrication without the typical wait.
           </h2>
 
-          <div className="mt-14 grid gap-px overflow-hidden border border-white/15 bg-white/15 md:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 grid gap-px overflow-hidden border border-white/15 bg-white/15 sm:mt-14 md:grid-cols-2 lg:grid-cols-4">
             {reasons.map(([title, copy]) => (
-              <div key={title} className="min-h-56 bg-[#202d61] p-7">
+              <div key={title} className="min-h-48 bg-[#202d61] p-6 sm:min-h-56 sm:p-7">
                 <div className="h-1 w-12 bg-yellow-400" />
 
-                <h3 className="mt-8 text-xl font-black">{title}</h3>
+                <h3 className="mt-7 text-xl font-black sm:mt-8">{title}</h3>
 
                 <p className="mt-4 leading-7 text-blue-100/70">{copy}</p>
               </div>
@@ -328,8 +406,8 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="mt-14 grid gap-5 lg:grid-cols-[1.3fr_.7fr]">
-            <div className="group relative min-h-[540px] overflow-hidden">
+          <div className="mt-10 grid gap-5 sm:mt-14 lg:grid-cols-[1.3fr_.7fr]">
+            <div className="group relative min-h-[420px] overflow-hidden sm:min-h-[540px]">
               <Image
                 src="/images/project-basehor-city-hall.jpg"
                 alt="Basehor City Hall architectural metal project"
@@ -339,12 +417,12 @@ export default function Home() {
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/5 to-transparent" />
 
-              <div className="absolute bottom-0 left-0 p-8 text-white">
+              <div className="absolute bottom-0 left-0 p-6 text-white sm:p-8">
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-yellow-300">
                   Featured Project
                 </p>
 
-                <h3 className="mt-3 text-3xl font-black">
+                <h3 className="mt-3 text-2xl font-black sm:text-3xl">
                   Basehor City Hall
                 </h3>
 
@@ -355,7 +433,7 @@ export default function Home() {
             </div>
 
             <div className="grid gap-5">
-              <div className="group relative min-h-[260px] overflow-hidden">
+              <div className="group relative min-h-[230px] overflow-hidden sm:min-h-[260px]">
                 <Image
                   src="/images/project-commercial-facade.jpg"
                   alt="Commercial architectural metal facade"
@@ -370,7 +448,7 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="group relative min-h-[260px] overflow-hidden">
+              <div className="group relative min-h-[230px] overflow-hidden sm:min-h-[260px]">
                 <Image
                   src="/images/product-custom-welded.jpg"
                   alt="Custom fabricated sheet metal component"
@@ -394,7 +472,7 @@ export default function Home() {
         id="capabilities"
         className="kam-section bg-[#111936] text-white"
       >
-        <div className="kam-container grid gap-16 lg:grid-cols-[.85fr_1.15fr]">
+        <div className="kam-container grid gap-12 lg:grid-cols-[.85fr_1.15fr] lg:gap-16">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.24em] text-yellow-400">
               Shop Capabilities
@@ -411,13 +489,13 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-px bg-white/15">
+          <div className="grid grid-cols-1 gap-px bg-white/15 sm:grid-cols-2">
             {capabilities.map((capability) => (
               <div
                 key={capability}
-                className="flex min-h-28 items-center bg-[#111936] p-5 font-bold"
+                className="flex min-h-24 items-center bg-[#111936] p-5 font-bold sm:min-h-28"
               >
-                <span className="mr-4 h-2 w-2 bg-yellow-400" />
+                <span className="mr-4 h-2 w-2 shrink-0 bg-yellow-400" />
                 {capability}
               </div>
             ))}
@@ -434,11 +512,11 @@ export default function Home() {
             Specialized capabilities. One fabrication partner.
           </h2>
 
-          <div className="mt-14 grid gap-5 lg:grid-cols-3">
+          <div className="mt-10 grid gap-5 sm:mt-14 lg:grid-cols-3">
             {locations.map((location) => (
               <article
                 key={location.city}
-                className="border-t-4 border-[#202d61] bg-[#f4f6f8] p-8"
+                className="border-t-4 border-[#202d61] bg-[#f4f6f8] p-7 sm:p-8"
               >
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
                   Kansas
@@ -468,13 +546,13 @@ export default function Home() {
       </section>
 
       {/* TRUST */}
-      <section className="border-y border-slate-200 bg-[#f8f9fa] py-14">
+      <section className="border-y border-slate-200 bg-[#f8f9fa] py-12 sm:py-14">
         <div className="kam-container">
           <p className="text-center text-xs font-black uppercase tracking-[0.2em] text-slate-400">
             Materials • Quality • Industry Relationships
           </p>
 
-          <div className="mt-8 grid gap-6 text-center text-lg font-black text-[#202d61] sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid grid-cols-2 gap-6 text-center text-base font-black text-[#202d61] sm:text-lg lg:grid-cols-4">
             <div>PAC-CLAD</div>
             <div>DREXEL</div>
             <div>PACCA</div>
@@ -486,11 +564,11 @@ export default function Home() {
       {/* ORDER CTA */}
       <section
         id="order"
-        className="relative overflow-hidden bg-yellow-400 py-24"
+        className="relative overflow-hidden bg-yellow-400 py-20 sm:py-24"
       >
         <div className="absolute -right-20 top-0 h-full w-1/3 -skew-x-12 bg-white/20" />
 
-        <div className="kam-container relative z-10 flex flex-col justify-between gap-10 lg:flex-row lg:items-center">
+        <div className="kam-container relative z-10 flex flex-col justify-between gap-8 lg:flex-row lg:items-center lg:gap-10">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.22em] text-[#202d61]">
               Have a drawing?
@@ -511,16 +589,16 @@ export default function Home() {
       </section>
 
       {/* FOOTER */}
-      <footer id="contact" className="bg-[#0b1024] py-16 text-white">
+      <footer id="contact" className="bg-[#0b1024] py-14 text-white sm:py-16">
         <div className="kam-container">
-          <div className="grid gap-12 lg:grid-cols-[1.3fr_.7fr_.7fr]">
+          <div className="grid gap-10 lg:grid-cols-[1.3fr_.7fr_.7fr] lg:gap-12">
             <div>
               <Image
                 src="/logos/kam-logo-horizontal.png"
                 alt="Kansas Architectural Metals"
                 width={260}
                 height={90}
-                className="h-auto w-[240px] brightness-0 invert"
+                className="h-auto w-[220px] brightness-0 invert sm:w-[240px]"
               />
 
               <p className="mt-7 max-w-md leading-7 text-slate-400">
@@ -533,11 +611,19 @@ export default function Home() {
                 Contact
               </p>
 
-              <p className="mt-6 font-bold">913-441-1208</p>
+              <a
+                href="tel:9134411208"
+                className="mt-6 block font-bold transition hover:text-yellow-400"
+              >
+                913-441-1208
+              </a>
 
-              <p className="mt-3 text-sm text-slate-400">
+              <a
+                href="mailto:fabricate@kansasarchmetals.com"
+                className="mt-3 block break-all text-sm text-slate-400 transition hover:text-white"
+              >
                 fabricate@kansasarchmetals.com
-              </p>
+              </a>
 
               <p className="mt-3 text-sm text-slate-400">
                 Monday–Friday
@@ -559,7 +645,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="mt-14 border-t border-white/10 pt-7 text-xs text-slate-600">
+          <div className="mt-12 border-t border-white/10 pt-7 text-xs text-slate-600 sm:mt-14">
             © 2026 Kansas Architectural Metals. All rights reserved.
           </div>
         </div>
