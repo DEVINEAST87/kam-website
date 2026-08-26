@@ -2,6 +2,11 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+const requests = new Map<string, { count: number; resetAt: number }>();
+
+const WINDOW_MS = 60_000;
+const MAX_REQUESTS_PER_WINDOW = 5;
+
 function escapeHtml(value: string) {
   return value
     .replaceAll("&", "&amp;")
@@ -11,8 +16,63 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#039;");
 }
 
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function isValidPhone(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  return digits.length >= 10 && digits.length <= 15;
+}
+
+function getClientIp(request: Request) {
+  const forwarded = request.headers.get("x-forwarded-for");
+
+  if (forwarded) {
+    return forwarded.split(",")[0].trim();
+  }
+
+  return request.headers.get("x-real-ip") ?? "unknown";
+}
+
+function isRateLimited(ip: string) {
+  const now = Date.now();
+  const current = requests.get(ip);
+
+  if (!current || current.resetAt <= now) {
+    requests.set(ip, {
+      count: 1,
+      resetAt: now + WINDOW_MS,
+    });
+
+    return false;
+  }
+
+  if (current.count >= MAX_REQUESTS_PER_WINDOW) {
+    return true;
+  }
+
+  current.count += 1;
+  requests.set(ip, current);
+
+  return false;
+}
+
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+
+    if (isRateLimited(ip)) {
+      return Response.json(
+        {
+          success: false,
+          message:
+            "Too many submissions were received from this connection. Please wait a minute and try again.",
+        },
+        { status: 429 }
+      );
+    }
+
     const formData = await request.formData();
 
     const getText = (name: string) =>
@@ -32,6 +92,16 @@ export async function POST(request: Request) {
     const color = getText("color");
     const notes = getText("notes");
 
+    // Hidden honeypot field.
+    const website = getText("website");
+
+    if (website) {
+      return Response.json({
+        success: true,
+        referenceNumber: "KAM-RECEIVED",
+      });
+    }
+
     if (!company || !contactName || !phone || !email) {
       return Response.json(
         {
@@ -42,19 +112,48 @@ export async function POST(request: Request) {
       );
     }
 
+    if (company.length > 150 || contactName.length > 150) {
+      return Response.json(
+        {
+          success: false,
+          message: "One or more contact fields are too long.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidEmail(email)) {
+      return Response.json(
+        {
+          success: false,
+          message: "Please enter a valid email address.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidPhone(phone)) {
+      return Response.json(
+        {
+          success: false,
+          message: "Please enter a valid phone number.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (notes.length > 10_000) {
+      return Response.json(
+        {
+          success: false,
+          message: "The notes field is too long.",
+        },
+        { status: 400 }
+      );
+    }
+
     const fileEntries = formData.getAll("attachments");
-console.log(
-  "ATTACHMENTS RECEIVED:",
-  fileEntries.map((entry) =>
-    entry instanceof File
-      ? {
-          name: entry.name,
-          size: entry.size,
-          type: entry.type,
-        }
-      : entry
-  )
-);
+
     const attachments: {
       filename: string;
       content: Buffer;
@@ -62,9 +161,33 @@ console.log(
 
     let totalBytes = 0;
 
+    const allowedExtensions = [
+      ".pdf",
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".webp",
+      ".doc",
+      ".docx",
+      ".xls",
+      ".xlsx",
+    ];
+
     for (const entry of fileEntries) {
       if (!(entry instanceof File) || entry.size === 0) {
         continue;
+      }
+
+      const lowerName = entry.name.toLowerCase();
+
+      if (!allowedExtensions.some((ext) => lowerName.endsWith(ext))) {
+        return Response.json(
+          {
+            success: false,
+            message: `The file "${entry.name}" is not an allowed file type.`,
+          },
+          { status: 400 }
+        );
       }
 
       totalBytes += entry.size;
@@ -109,21 +232,11 @@ console.log(
       color: escapeHtml(color),
       notes: escapeHtml(notes).replaceAll("\n", "<br />"),
     };
-console.log(
-  "ATTACHMENTS BEING SENT:",
-  attachments.map((file) => ({
-    filename: file.filename,
-    bytes: file.content.length,
-  }))
-);
+
     const { data, error } = await resend.emails.send({
       from: "KAM Website <onboarding@resend.dev>",
-
-      // TEST DESTINATION FOR NOW
       to: ["delivered@resend.dev"],
-
       subject: `New KAM Order Submission — ${referenceNumber}`,
-
       replyTo: email,
 
       html: `
@@ -160,49 +273,19 @@ console.log(
 
             <h2>Project Information</h2>
 
-            <p>
-              <strong>Project / Job:</strong>
-              ${safe.projectName || "—"}
-            </p>
-
-            <p>
-              <strong>PO Number:</strong>
-              ${safe.poNumber || "—"}
-            </p>
-
-            <p>
-              <strong>Job Address:</strong>
-              ${safe.jobAddress || "—"}
-            </p>
-
-            <p>
-              <strong>Requested Date:</strong>
-              ${safe.requestedDate || "—"}
-            </p>
+            <p><strong>Project / Job:</strong> ${safe.projectName || "—"}</p>
+            <p><strong>PO Number:</strong> ${safe.poNumber || "—"}</p>
+            <p><strong>Job Address:</strong> ${safe.jobAddress || "—"}</p>
+            <p><strong>Requested Date:</strong> ${safe.requestedDate || "—"}</p>
 
             <hr style="border:none;border-top:1px solid #e5e7eb;margin:28px 0;" />
 
             <h2>Order Details</h2>
 
-            <p>
-              <strong>Preferred Location:</strong>
-              ${safe.location || "—"}
-            </p>
-
-            <p>
-              <strong>Material:</strong>
-              ${safe.material || "—"}
-            </p>
-
-            <p>
-              <strong>Gauge / Thickness:</strong>
-              ${safe.gauge || "—"}
-            </p>
-
-            <p>
-              <strong>Finish / Color:</strong>
-              ${safe.color || "—"}
-            </p>
+            <p><strong>Preferred Location:</strong> ${safe.location || "—"}</p>
+            <p><strong>Material:</strong> ${safe.material || "—"}</p>
+            <p><strong>Gauge / Thickness:</strong> ${safe.gauge || "—"}</p>
+            <p><strong>Finish / Color:</strong> ${safe.color || "—"}</p>
 
             <p>
               <strong>Notes:</strong>
@@ -223,7 +306,7 @@ console.log(
     });
 
     if (error) {
-      console.error(error);
+      console.error("Resend order error:", error);
 
       return Response.json(
         {
@@ -240,7 +323,7 @@ console.log(
       emailId: data?.id,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Order submission error:", error);
 
     return Response.json(
       {

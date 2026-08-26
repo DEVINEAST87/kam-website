@@ -2,6 +2,11 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+const requests = new Map<string, { count: number; resetAt: number }>();
+
+const WINDOW_MS = 60_000;
+const MAX_REQUESTS_PER_WINDOW = 5;
+
 function escapeHtml(value: string) {
   return value
     .replaceAll("&", "&amp;")
@@ -11,8 +16,63 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#039;");
 }
 
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function isValidPhone(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  return digits.length >= 10 && digits.length <= 15;
+}
+
+function getClientIp(request: Request) {
+  const forwarded = request.headers.get("x-forwarded-for");
+
+  if (forwarded) {
+    return forwarded.split(",")[0].trim();
+  }
+
+  return request.headers.get("x-real-ip") ?? "unknown";
+}
+
+function isRateLimited(ip: string) {
+  const now = Date.now();
+  const current = requests.get(ip);
+
+  if (!current || current.resetAt <= now) {
+    requests.set(ip, {
+      count: 1,
+      resetAt: now + WINDOW_MS,
+    });
+
+    return false;
+  }
+
+  if (current.count >= MAX_REQUESTS_PER_WINDOW) {
+    return true;
+  }
+
+  current.count += 1;
+  requests.set(ip, current);
+
+  return false;
+}
+
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+
+    if (isRateLimited(ip)) {
+      return Response.json(
+        {
+          success: false,
+          message:
+            "Too many submissions were received from this connection. Please wait a minute and try again.",
+        },
+        { status: 429 }
+      );
+    }
+
     const formData = await request.formData();
 
     const getText = (name: string) =>
@@ -32,11 +92,61 @@ export async function POST(request: Request) {
       .map((value) => String(value))
       .join(", ");
 
+    // Hidden honeypot field.
+    const website = getText("website");
+
+    if (website) {
+      return Response.json({
+        success: true,
+        referenceNumber: "KAM-P-RECEIVED",
+      });
+    }
+
     if (!company || !contactName || !phone || !email) {
       return Response.json(
         {
           success: false,
           message: "Please complete all required contact fields.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (company.length > 150 || contactName.length > 150) {
+      return Response.json(
+        {
+          success: false,
+          message: "One or more contact fields are too long.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidEmail(email)) {
+      return Response.json(
+        {
+          success: false,
+          message: "Please enter a valid email address.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidPhone(phone)) {
+      return Response.json(
+        {
+          success: false,
+          message: "Please enter a valid phone number.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (details.length > 10_000) {
+      return Response.json(
+        {
+          success: false,
+          message: "The additional details field is too long.",
         },
         { status: 400 }
       );
@@ -51,9 +161,33 @@ export async function POST(request: Request) {
 
     let totalBytes = 0;
 
+    const allowedExtensions = [
+      ".pdf",
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".webp",
+      ".doc",
+      ".docx",
+      ".xls",
+      ".xlsx",
+    ];
+
     for (const entry of fileEntries) {
       if (!(entry instanceof File) || entry.size === 0) {
         continue;
+      }
+
+      const lowerName = entry.name.toLowerCase();
+
+      if (!allowedExtensions.some((ext) => lowerName.endsWith(ext))) {
+        return Response.json(
+          {
+            success: false,
+            message: `The file "${entry.name}" is not an allowed file type.`,
+          },
+          { status: 400 }
+        );
       }
 
       totalBytes += entry.size;
@@ -97,17 +231,12 @@ export async function POST(request: Request) {
 
     const { data, error } = await resend.emails.send({
       from: "KAM Website <onboarding@resend.dev>",
-
-      // TEST MODE
       to: ["delivered@resend.dev"],
-
       subject: `KAM Current Pricing Request — ${referenceNumber}`,
-
       replyTo: email,
 
       html: `
         <div style="font-family:Arial,sans-serif;max-width:760px;margin:0 auto;color:#111936;">
-
           <div style="background:#111936;padding:28px;">
             <h1 style="color:#ffffff;margin:0;">
               Kansas Architectural Metals
@@ -119,7 +248,6 @@ export async function POST(request: Request) {
           </div>
 
           <div style="padding:28px;border:1px solid #e5e7eb;">
-
             <p style="font-size:14px;color:#667085;">
               Pricing Request Reference
             </p>
@@ -172,7 +300,6 @@ export async function POST(request: Request) {
             <p style="font-size:13px;color:#667085;">
               Submitted through the Kansas Architectural Metals website.
             </p>
-
           </div>
         </div>
       `,
