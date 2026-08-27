@@ -57,7 +57,9 @@ export default function BlobUploadTestPage() {
         const errorText = await uploadResponse.text();
 
         setMessage(
-          `Upload failed (${uploadResponse.status}): ${errorText || "Unknown error"}`
+          `Upload failed (${uploadResponse.status}): ${
+            errorText || "Unknown error"
+          }`
         );
         return;
       }
