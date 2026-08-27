@@ -1,4 +1,5 @@
 import { put } from "@vercel/blob";
+import { getVercelOidcToken } from "@vercel/oidc";
 
 export async function POST(request: Request) {
   try {
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
     }
 
     const storeId = process.env.KAM_BLOB_STORE_ID;
-    const oidcToken = process.env.VERCEL_OIDC_TOKEN;
+    const oidcToken = await getVercelOidcToken();
 
     const diagnostics = {
       hasKamBlobStoreId: Boolean(storeId),
@@ -60,7 +61,6 @@ export async function POST(request: Request) {
             : "Unknown Blob upload error",
         diagnostics: {
           hasKamBlobStoreId: Boolean(process.env.KAM_BLOB_STORE_ID),
-          hasOidcToken: Boolean(process.env.VERCEL_OIDC_TOKEN),
         },
       },
       { status: 500 }
