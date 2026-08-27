@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 
 type Diagnostics = {
   hasBlobStoreId?: boolean;
+  hasKamBlobStoreId?: boolean;
   hasOidcToken?: boolean;
   hasReadWriteToken?: boolean;
 };
@@ -67,12 +68,23 @@ export default function TestBlobPage() {
           <h2 className="font-black">Authentication Diagnostics</h2>
 
           <div className="mt-4 space-y-2 font-mono text-sm">
-            <p>
-              BLOB_STORE_ID:{" "}
-              <strong>
-                {diagnostics.hasBlobStoreId ? "TRUE" : "FALSE"}
-              </strong>
-            </p>
+            {"hasKamBlobStoreId" in diagnostics && (
+              <p>
+                KAM_BLOB_STORE_ID:{" "}
+                <strong>
+                  {diagnostics.hasKamBlobStoreId ? "TRUE" : "FALSE"}
+                </strong>
+              </p>
+            )}
+
+            {"hasBlobStoreId" in diagnostics && (
+              <p>
+                BLOB_STORE_ID:{" "}
+                <strong>
+                  {diagnostics.hasBlobStoreId ? "TRUE" : "FALSE"}
+                </strong>
+              </p>
+            )}
 
             <p>
               VERCEL_OIDC_TOKEN:{" "}
@@ -81,12 +93,14 @@ export default function TestBlobPage() {
               </strong>
             </p>
 
-            <p>
-              BLOB_READ_WRITE_TOKEN:{" "}
-              <strong>
-                {diagnostics.hasReadWriteToken ? "TRUE" : "FALSE"}
-              </strong>
-            </p>
+            {"hasReadWriteToken" in diagnostics && (
+              <p>
+                BLOB_READ_WRITE_TOKEN:{" "}
+                <strong>
+                  {diagnostics.hasReadWriteToken ? "TRUE" : "FALSE"}
+                </strong>
+              </p>
+            )}
           </div>
         </div>
       )}

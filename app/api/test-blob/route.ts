@@ -7,18 +7,32 @@ export async function POST(request: Request) {
 
     if (!(file instanceof File)) {
       return Response.json(
-        { success: false, message: "No file was provided." },
+        {
+          success: false,
+          message: "No file was provided.",
+        },
         { status: 400 }
       );
     }
 
+    const storeId = process.env.KAM_BLOB_STORE_ID;
+    const oidcToken = process.env.VERCEL_OIDC_TOKEN;
+
     const diagnostics = {
-      hasBlobStoreId: Boolean(process.env.BLOB_STORE_ID),
-      hasOidcToken: Boolean(process.env.VERCEL_OIDC_TOKEN),
-      hasReadWriteToken: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
+      hasKamBlobStoreId: Boolean(storeId),
+      hasOidcToken: Boolean(oidcToken),
     };
 
-    console.log("Blob diagnostics:", diagnostics);
+    if (!storeId || !oidcToken) {
+      return Response.json(
+        {
+          success: false,
+          message: "Required Blob authentication information is missing.",
+          diagnostics,
+        },
+        { status: 500 }
+      );
+    }
 
     const blob = await put(
       `tests/${Date.now()}-${file.name}`,
@@ -26,6 +40,8 @@ export async function POST(request: Request) {
       {
         access: "private",
         addRandomSuffix: true,
+        storeId,
+        oidcToken,
       }
     );
 
@@ -35,18 +51,17 @@ export async function POST(request: Request) {
       diagnostics,
     });
   } catch (error) {
-    const diagnostics = {
-      hasBlobStoreId: Boolean(process.env.BLOB_STORE_ID),
-      hasOidcToken: Boolean(process.env.VERCEL_OIDC_TOKEN),
-      hasReadWriteToken: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
-    };
-
     return Response.json(
       {
         success: false,
         message:
-          error instanceof Error ? error.message : "Unknown Blob error",
-        diagnostics,
+          error instanceof Error
+            ? error.message
+            : "Unknown Blob upload error",
+        diagnostics: {
+          hasKamBlobStoreId: Boolean(process.env.KAM_BLOB_STORE_ID),
+          hasOidcToken: Boolean(process.env.VERCEL_OIDC_TOKEN),
+        },
       },
       { status: 500 }
     );
