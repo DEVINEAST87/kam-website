@@ -10,8 +10,8 @@ import {
   useState,
 } from "react";
 
-const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25 MB per file
-const MAX_TOTAL_BYTES = 75 * 1024 * 1024; // 75 MB per order
+const MAX_FILE_BYTES = 25 * 1024 * 1024;
+const MAX_TOTAL_BYTES = 75 * 1024 * 1024;
 
 type UploadedFile = {
   originalName: string;
@@ -181,15 +181,43 @@ export default function SubmitOrderPage() {
         body: file,
       });
 
+      const uploadText = await uploadResponse.text();
+
       if (!uploadResponse.ok) {
-        throw new Error(`Could not upload "${file.name}".`);
+        throw new Error(
+          `Could not upload "${file.name}". ${
+            uploadText || `Status ${uploadResponse.status}`
+          }`
+        );
+      }
+
+      let uploadedBlob: {
+        pathname?: string;
+        contentType?: string;
+        url?: string;
+        downloadUrl?: string;
+        etag?: string;
+      };
+
+      try {
+        uploadedBlob = JSON.parse(uploadText);
+      } catch {
+        throw new Error(
+          `"${file.name}" reported a successful upload, but Blob storage did not return valid file information.`
+        );
+      }
+
+      if (!uploadedBlob.pathname) {
+        throw new Error(
+          `"${file.name}" reported a successful upload, but no stored Blob pathname was returned.`
+        );
       }
 
       uploadedFiles.push({
         originalName: file.name,
-        pathname: prepareResult.pathname,
+        pathname: uploadedBlob.pathname,
         size: file.size,
-        contentType: file.type,
+        contentType: uploadedBlob.contentType || file.type,
       });
     }
 
@@ -219,7 +247,6 @@ export default function SubmitOrderPage() {
 
       if (selectedFiles.length > 0) {
         setStatus("uploading");
-
         uploadedFiles = await uploadFiles(submissionId);
       }
 
@@ -228,7 +255,6 @@ export default function SubmitOrderPage() {
 
       const formData = new FormData(form);
 
-      // Files already went directly to private Blob storage.
       formData.delete("attachments");
 
       formData.set("submissionId", submissionId);
@@ -274,7 +300,6 @@ export default function SubmitOrderPage() {
 
   return (
     <main className="min-h-screen bg-[#f4f6f8] text-[#111936]">
-      {/* HEADER */}
       <header className="bg-[#0b1024] text-white">
         <div className="kam-container flex min-h-20 items-center justify-between gap-4 py-3 sm:min-h-20 sm:gap-6 sm:py-4">
           <Link href="/" className="flex shrink-0 items-center">
@@ -306,7 +331,6 @@ export default function SubmitOrderPage() {
         </div>
       </header>
 
-      {/* HERO */}
       <section className="bg-[#202d61] text-white">
         <div className="grid lg:grid-cols-[1.15fr_.85fr]">
           <div className="flex items-center">
@@ -324,17 +348,6 @@ export default function SubmitOrderPage() {
                 blueprint screenshot, PDF, sketch or other project information.
                 We&apos;ll contact you if anything needs clarification.
               </p>
-
-              <div className="mt-7 flex flex-wrap gap-2 sm:mt-9 sm:gap-3">
-                {["Drawings", "PDFs", "Photos", "Sketches"].map((item) => (
-                  <span
-                    key={item}
-                    className="border border-white/20 bg-white/5 px-3 py-2 text-[9px] font-black uppercase tracking-[0.12em] text-white/80 sm:px-4 sm:text-[10px] sm:tracking-[0.16em]"
-                  >
-                    {item}
-                  </span>
-                ))}
-              </div>
             </div>
           </div>
 
@@ -346,63 +359,16 @@ export default function SubmitOrderPage() {
               priority
               className="object-cover"
             />
-
-            <div className="absolute inset-0 bg-gradient-to-t from-[#202d61]/60 via-transparent to-transparent lg:bg-gradient-to-r lg:from-[#202d61]/55" />
-
-            <div className="absolute bottom-4 left-4 right-4 border-l-4 border-yellow-400 bg-[#0b1024]/90 px-4 py-3 backdrop-blur-sm sm:bottom-6 sm:left-auto sm:right-6 sm:max-w-sm sm:px-5 sm:py-4">
-              <p className="text-[9px] font-black uppercase tracking-[0.16em] text-yellow-400 sm:text-[10px] sm:tracking-[0.18em]">
-                Built to Order
-              </p>
-
-              <p className="mt-1 text-sm font-bold text-white">
-                Custom fabrication is what we do.
-              </p>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* PROCESS */}
-      <section className="border-b border-slate-200 bg-white">
-        <div className="kam-container grid md:grid-cols-3">
-          {[
-            ["01", "Send It", "Upload your order information and files."],
-            ["02", "We Review It", "Our fabrication team checks the details."],
-            [
-              "03",
-              "We Build It",
-              "We contact you if anything needs clarification.",
-            ],
-          ].map(([number, title, copy], index) => (
-            <div
-              key={number}
-              className={`flex gap-4 py-5 sm:gap-5 sm:py-7 ${
-                index > 0
-                  ? "border-t border-slate-200 md:border-l md:border-t-0 md:pl-8"
-                  : ""
-              }`}
-            >
-              <span className="text-sm font-black text-yellow-500">
-                {number}
-              </span>
-
-              <div>
-                <p className="font-black text-[#111936]">{title}</p>
-                <p className="mt-1 text-sm leading-6 text-slate-500">{copy}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* FORM */}
       <section className="kam-section">
         <div className="kam-container grid gap-8 lg:grid-cols-[1.35fr_.65fr] lg:gap-10">
           <form
             onSubmit={handleSubmit}
             className="relative border border-slate-200 bg-white p-5 shadow-sm sm:p-10"
           >
-            {/* BOT TRAP */}
             <div
               aria-hidden="true"
               className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden"
@@ -418,11 +384,10 @@ export default function SubmitOrderPage() {
               </label>
             </div>
 
-            {/* CONTACT */}
             <div>
               <p className="kam-eyebrow">Contact Information</p>
 
-              <div className="mt-6 grid gap-5 sm:mt-7 sm:grid-cols-2 sm:gap-6">
+              <div className="mt-6 grid gap-5 sm:grid-cols-2 sm:gap-6">
                 <Field label="Company Name" name="company" required />
                 <Field label="Contact Name" name="contactName" required />
                 <Field label="Phone Number" name="phone" type="tel" required />
@@ -432,15 +397,13 @@ export default function SubmitOrderPage() {
 
             <Divider />
 
-            {/* PROJECT */}
             <div>
               <p className="kam-eyebrow">Project Information</p>
 
-              <div className="mt-6 grid gap-5 sm:mt-7 sm:grid-cols-2 sm:gap-6">
+              <div className="mt-6 grid gap-5 sm:grid-cols-2 sm:gap-6">
                 <Field label="Project / Job Name" name="projectName" />
                 <Field label="PO Number" name="poNumber" />
                 <Field label="Job Address" name="jobAddress" />
-
                 <Field
                   label="Requested Completion Date"
                   name="requestedDate"
@@ -451,11 +414,10 @@ export default function SubmitOrderPage() {
 
             <Divider />
 
-            {/* ORDER DETAILS */}
             <div>
               <p className="kam-eyebrow">Order Details</p>
 
-              <div className="mt-6 grid gap-5 sm:mt-7 sm:grid-cols-2 sm:gap-6">
+              <div className="mt-6 grid gap-5 sm:grid-cols-2 sm:gap-6">
                 <SelectField
                   label="Preferred Location"
                   name="location"
@@ -485,7 +447,7 @@ export default function SubmitOrderPage() {
                 <Field label="Finish / Color" name="color" />
               </div>
 
-              <label className="mt-5 block sm:mt-6">
+              <label className="mt-5 block">
                 <span className="text-sm font-black text-[#111936]">
                   Order Details / Notes
                 </span>
@@ -494,19 +456,16 @@ export default function SubmitOrderPage() {
                   name="notes"
                   rows={7}
                   className="mt-2 w-full border border-slate-300 bg-white px-4 py-3 text-base outline-none transition focus:border-[#202d61]"
-                  placeholder="Describe what you need, quantities, dimensions, special instructions or anything else that may help us process your order."
                 />
               </label>
             </div>
 
             <Divider />
 
-            {/* FILE UPLOAD */}
             <div>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="kam-eyebrow">Files & Drawings</p>
-
                   <p className="mt-3 text-sm leading-6 text-slate-500">
                     Drag files into the box or choose them from your device.
                   </p>
@@ -523,48 +482,29 @@ export default function SubmitOrderPage() {
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => {
-                  if (!isWorking) {
-                    fileInputRef.current?.click();
-                  }
+                  if (!isWorking) fileInputRef.current?.click();
                 }}
-                className={`group mt-6 flex min-h-48 flex-col items-center justify-center border-2 border-dashed p-5 text-center transition sm:mt-7 sm:min-h-56 sm:p-8 ${
+                className={`group mt-6 flex min-h-48 flex-col items-center justify-center border-2 border-dashed p-5 text-center transition ${
                   isWorking
                     ? "cursor-not-allowed border-slate-200 bg-slate-100 opacity-60"
                     : isDragging
                       ? "cursor-pointer border-yellow-400 bg-yellow-50"
-                      : "cursor-pointer border-slate-300 bg-[#f8f9fa] hover:border-yellow-400 hover:bg-yellow-50/30"
+                      : "cursor-pointer border-slate-300 bg-[#f8f9fa] hover:border-yellow-400"
                 }`}
               >
-                <div
-                  className={`flex h-12 w-12 items-center justify-center rounded-full text-xl font-black transition sm:h-14 sm:w-14 sm:text-2xl ${
-                    isDragging
-                      ? "bg-yellow-400 text-[#111936]"
-                      : "bg-[#202d61] text-white group-hover:bg-yellow-400 group-hover:text-[#111936]"
-                  }`}
-                >
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#202d61] text-xl font-black text-white">
                   ↑
                 </div>
 
-                <span className="mt-4 text-base font-black text-[#111936] sm:mt-5 sm:text-lg">
-                  {isDragging
-                    ? "Drop your files here"
-                    : "Upload drawings, forms, photos or PDFs"}
-                </span>
-
-                <span className="mt-3 max-w-lg text-sm leading-6 text-slate-500">
-                  Completed fabrication forms, marked-up blueprints, sketches,
-                  screenshots and other supporting documents are welcome.
-                </span>
-
-                <span className="mt-4 text-[9px] font-black uppercase tracking-[0.12em] text-slate-400 sm:text-[10px] sm:tracking-[0.16em]">
-                  PDF • JPG • PNG • WEBP • WORD • EXCEL
+                <span className="mt-4 text-base font-black text-[#111936]">
+                  Upload drawings, forms, photos or PDFs
                 </span>
 
                 <span className="mt-3 text-xs font-bold text-slate-400">
                   Up to 25 MB per file • 75 MB total
                 </span>
 
-                <span className="mt-5 w-full rounded-md bg-[#202d61] px-6 py-4 text-xs font-black uppercase tracking-wide text-white transition group-hover:bg-[#111936] sm:mt-6 sm:w-auto sm:py-3">
+                <span className="mt-5 rounded-md bg-[#202d61] px-6 py-4 text-xs font-black uppercase tracking-wide text-white">
                   Choose Files
                 </span>
 
@@ -586,64 +526,31 @@ export default function SubmitOrderPage() {
               )}
 
               {selectedFiles.length > 0 && (
-                <div className="mt-5 overflow-hidden border border-slate-200 bg-white sm:mt-6">
-                  <div className="flex items-center justify-between gap-4 border-b border-slate-200 bg-[#f8f9fa] px-4 py-4 sm:px-5">
-                    <div>
-                      <p className="text-sm font-black text-[#111936]">
-                        {selectedFiles.length}{" "}
-                        {selectedFiles.length === 1 ? "file" : "files"} selected
-                      </p>
-
-                      <p className="mt-1 text-xs text-slate-500">
-                        {formatBytes(totalFileBytes)} total
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      disabled={isWorking}
-                      onClick={clearFiles}
-                      className="shrink-0 text-[10px] font-black uppercase tracking-[0.08em] text-slate-500 transition hover:text-red-600 disabled:opacity-40 sm:text-xs"
+                <div className="mt-5 border border-slate-200 bg-white">
+                  {selectedFiles.map((file, index) => (
+                    <div
+                      key={`${file.name}-${file.size}-${index}`}
+                      className="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-4 last:border-b-0"
                     >
-                      Remove All
-                    </button>
-                  </div>
-
-                  <div className="divide-y divide-slate-200">
-                    {selectedFiles.map((file, index) => (
-                      <div
-                        key={`${file.name}-${file.size}-${index}`}
-                        className="flex items-center justify-between gap-4 px-4 py-4 sm:gap-5 sm:px-5"
-                      >
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-50 text-xs font-black text-green-700 sm:h-9 sm:w-9 sm:text-sm">
-                              ✓
-                            </div>
-
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-bold text-[#111936]">
-                                {file.name}
-                              </p>
-
-                              <p className="mt-1 text-xs text-slate-400">
-                                {formatBytes(file.size)}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          disabled={isWorking}
-                          onClick={() => removeFile(index)}
-                          className="shrink-0 text-[10px] font-black uppercase tracking-[0.06em] text-slate-400 transition hover:text-red-600 disabled:opacity-40 sm:text-xs sm:tracking-[0.08em]"
-                        >
-                          Remove
-                        </button>
+                      <div>
+                        <p className="text-sm font-bold text-[#111936]">
+                          {file.name}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          {formatBytes(file.size)}
+                        </p>
                       </div>
-                    ))}
-                  </div>
+
+                      <button
+                        type="button"
+                        disabled={isWorking}
+                        onClick={() => removeFile(index)}
+                        className="text-xs font-black uppercase text-slate-400 hover:text-red-600"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -665,7 +572,6 @@ export default function SubmitOrderPage() {
                 defaultChecked
                 className="mt-1 h-5 w-5 shrink-0"
               />
-
               <span className="text-sm leading-6 text-slate-600">
                 Please contact me if any dimensions, materials or instructions
                 need clarification before the order is processed.
@@ -673,15 +579,11 @@ export default function SubmitOrderPage() {
             </label>
 
             {status === "success" && (
-              <div className="mt-7 border-l-4 border-green-500 bg-green-50 p-4 sm:mt-8 sm:p-5">
+              <div className="mt-7 border-l-4 border-green-500 bg-green-50 p-4">
                 <p className="font-black text-green-900">Order received.</p>
-
-                <p className="mt-2 text-sm leading-6 text-green-800">
-                  {message}
-                </p>
-
+                <p className="mt-2 text-sm text-green-800">{message}</p>
                 {referenceNumber && (
-                  <p className="mt-3 break-all text-sm font-black text-green-900">
+                  <p className="mt-3 text-sm font-black text-green-900">
                     Reference: {referenceNumber}
                   </p>
                 )}
@@ -689,21 +591,18 @@ export default function SubmitOrderPage() {
             )}
 
             {status === "error" && (
-              <div className="mt-7 border-l-4 border-red-500 bg-red-50 p-4 sm:mt-8 sm:p-5">
+              <div className="mt-7 border-l-4 border-red-500 bg-red-50 p-4">
                 <p className="font-black text-red-900">
                   We couldn&apos;t submit your order.
                 </p>
-
-                <p className="mt-2 text-sm leading-6 text-red-800">
-                  {message}
-                </p>
+                <p className="mt-2 text-sm text-red-800">{message}</p>
               </div>
             )}
 
             <button
               type="submit"
               disabled={isWorking}
-              className="mt-7 w-full rounded-md bg-yellow-400 px-6 py-5 text-sm font-black uppercase tracking-wide text-[#111936] transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60 sm:mt-8 sm:px-7"
+              className="mt-7 w-full rounded-md bg-yellow-400 px-6 py-5 text-sm font-black uppercase tracking-wide text-[#111936] disabled:opacity-60"
             >
               {status === "uploading"
                 ? "Uploading Files..."
@@ -713,84 +612,29 @@ export default function SubmitOrderPage() {
             </button>
           </form>
 
-          {/* SIDEBAR */}
           <aside className="space-y-5">
-            <div className="relative min-h-[220px] overflow-hidden sm:min-h-[260px]">
-              <Image
-                src="/images/product-custom-components.jpg"
-                alt="Custom sheet metal components fabricated by KAM"
-                fill
-                className="object-cover"
-              />
-
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0b1024]/85 via-transparent to-transparent" />
-
-              <div className="absolute bottom-0 left-0 p-5 text-white sm:p-6">
-                <p className="text-[9px] font-black uppercase tracking-[0.16em] text-yellow-400 sm:text-[10px] sm:tracking-[0.18em]">
-                  Real KAM Fabrication
-                </p>
-
-                <p className="mt-2 max-w-xs text-sm font-bold leading-6 sm:text-base">
-                  From straightforward trim to specialty fabricated components.
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-[#111936] p-6 text-white sm:p-8">
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-yellow-400 sm:text-xs sm:tracking-[0.18em]">
+            <div className="bg-[#111936] p-6 text-white">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-yellow-400">
                 Don&apos;t have a formal drawing?
               </p>
-
-              <h2 className="mt-4 text-2xl font-black tracking-[-0.04em] sm:mt-5 sm:text-3xl">
-                That&apos;s okay.
-              </h2>
-
-              <p className="mt-4 leading-7 text-slate-300 sm:mt-5">
+              <p className="mt-4 leading-7 text-slate-300">
                 Send us a hand sketch, screenshot, marked-up blueprint or photo.
                 As long as we can contact you, our team can help work through
                 the remaining details.
               </p>
             </div>
 
-            <div className="border border-slate-200 bg-white p-6 sm:p-8">
+            <div className="border border-slate-200 bg-white p-6">
               <p className="kam-eyebrow">Need the KAM Form?</p>
-
-              <h2 className="mt-4 text-2xl font-black tracking-[-0.03em]">
-                Download our fabrication order form.
-              </h2>
-
-              <p className="mt-4 text-sm leading-7 text-slate-500">
-                Print it, draw your parts, scan it and upload the completed form
-                here.
-              </p>
 
               <a
                 href="/downloads/KAM-Fabrication-Order-Form.pdf"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-6 block w-full border border-[#202d61] px-5 py-4 text-center text-xs font-black uppercase tracking-wide text-[#202d61] transition hover:bg-[#202d61] hover:text-white"
+                className="mt-6 block w-full border border-[#202d61] px-5 py-4 text-center text-xs font-black uppercase tracking-wide text-[#202d61]"
               >
                 Open Fabrication Order Form →
               </a>
-            </div>
-
-            <div className="border-t-4 border-yellow-400 bg-white p-6 sm:p-8">
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 sm:text-xs sm:tracking-[0.18em]">
-                Questions?
-              </p>
-
-              <a
-                href="tel:9134411208"
-                className="mt-4 block text-2xl font-black transition hover:text-[#202d61]"
-              >
-                913-441-1208
-              </a>
-
-              <p className="mt-3 text-sm text-slate-500">
-                Monday–Friday
-                <br />
-                6:30 AM–4:30 PM
-              </p>
             </div>
           </aside>
         </div>
