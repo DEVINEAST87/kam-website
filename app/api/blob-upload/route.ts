@@ -57,20 +57,31 @@ export async function POST(request: Request) {
       );
     }
 
+    const storeId = process.env.KAM_BLOB_STORE_ID;
+
+    if (!storeId) {
+      return Response.json(
+        {
+          success: false,
+          message: "KAM_BLOB_STORE_ID is missing.",
+        },
+        { status: 500 }
+      );
+    }
+
     const safeFilename = sanitizeFilename(filename);
 
     const pathname = `customer-uploads/test/${Date.now()}-${safeFilename}`;
 
     const token = await issueSignedToken({
       operations: ["put"],
-      storeId: process.env.KAM_BLOB_STORE_ID,
+      storeId,
     });
 
     const { presignedUrl } = await presignUrl(token, {
       pathname,
       operation: "put",
       access: "private",
-      contentType,
       maximumSizeInBytes: MAX_FILE_SIZE,
       validUntil: Date.now() + 15 * 60 * 1000,
     });
