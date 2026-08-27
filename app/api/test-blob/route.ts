@@ -1,5 +1,4 @@
 import { put } from "@vercel/blob";
-import { getVercelOidcToken } from "@vercel/oidc";
 
 export async function POST(request: Request) {
   try {
@@ -17,19 +16,15 @@ export async function POST(request: Request) {
     }
 
     const storeId = process.env.KAM_BLOB_STORE_ID;
-    const oidcToken = await getVercelOidcToken();
 
-    const diagnostics = {
-      hasKamBlobStoreId: Boolean(storeId),
-      hasOidcToken: Boolean(oidcToken),
-    };
-
-    if (!storeId || !oidcToken) {
+    if (!storeId) {
       return Response.json(
         {
           success: false,
-          message: "Required Blob authentication information is missing.",
-          diagnostics,
+          message: "KAM_BLOB_STORE_ID is missing.",
+          diagnostics: {
+            hasKamBlobStoreId: false,
+          },
         },
         { status: 500 }
       );
@@ -42,16 +37,19 @@ export async function POST(request: Request) {
         access: "private",
         addRandomSuffix: true,
         storeId,
-        oidcToken,
       }
     );
 
     return Response.json({
       success: true,
       pathname: blob.pathname,
-      diagnostics,
+      diagnostics: {
+        hasKamBlobStoreId: true,
+      },
     });
   } catch (error) {
+    console.error("Blob test upload failed:", error);
+
     return Response.json(
       {
         success: false,
