@@ -10,25 +10,46 @@ import {
   useState,
 } from "react";
 
-const MAX_UPLOAD_BYTES = 3_500_000;
+const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25 MB per file
+const MAX_TOTAL_BYTES = 75 * 1024 * 1024; // 75 MB per order
+
+type UploadedFile = {
+  originalName: string;
+  pathname: string;
+  size: number;
+  contentType: string;
+};
 
 function formatBytes(bytes: number) {
   if (bytes === 0) return "0 KB";
 
-  if (bytes < 1_000_000) {
-    return `${Math.max(1, Math.round(bytes / 1000))} KB`;
+  if (bytes < 1024 * 1024) {
+    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   }
 
-  return `${(bytes / 1_000_000).toFixed(2)} MB`;
+  return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+}
+
+function createSubmissionId() {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 export default function SubmitOrderPage() {
   const [status, setStatus] = useState<
-    "idle" | "sending" | "success" | "error"
+    "idle" | "uploading" | "sending" | "success" | "error"
   >("idle");
 
   const [message, setMessage] = useState("");
   const [referenceNumber, setReferenceNumber] = useState("");
+  const [uploadProgress, setUploadProgress] = useState("");
+
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [fileError, setFileError] = useState("");
   const [isDragging, setIsDragging] = useState(false);
@@ -47,6 +68,15 @@ export default function SubmitOrderPage() {
 
     if (validFiles.length === 0) return;
 
+    for (const file of validFiles) {
+      if (file.size > MAX_FILE_BYTES) {
+        setFileError(
+          `"${file.name}" is larger than the 25 MB per-file limit.`
+        );
+        return;
+      }
+    }
+
     const existingNames = new Set(
       selectedFiles.map((file) => `${file.name}-${file.size}`)
     );
@@ -62,9 +92,9 @@ export default function SubmitOrderPage() {
       0
     );
 
-    if (combinedSize > MAX_UPLOAD_BYTES) {
+    if (combinedSize > MAX_TOTAL_BYTES) {
       setFileError(
-        "The combined upload is too large. Please keep all files under about 3.5 MB total for this first version."
+        "The combined upload is larger than the 75 MB total limit."
       );
       return;
     }
@@ -105,33 +135,105 @@ export default function SubmitOrderPage() {
   function clearFiles() {
     setSelectedFiles([]);
     setFileError("");
+    setUploadProgress("");
+  }
+
+  async function uploadFiles(
+    submissionId: string
+  ): Promise<UploadedFile[]> {
+    const uploadedFiles: UploadedFile[] = [];
+
+    for (let index = 0; index < selectedFiles.length; index++) {
+      const file = selectedFiles[index];
+
+      setUploadProgress(
+        `Uploading file ${index + 1} of ${selectedFiles.length}: ${file.name}`
+      );
+
+      const prepareResponse = await fetch("/api/blob-upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type,
+          size: file.size,
+          uploadType: "order",
+          submissionId,
+        }),
+      });
+
+      const prepareResult = await prepareResponse.json();
+
+      if (!prepareResponse.ok || !prepareResult.success) {
+        throw new Error(
+          prepareResult.message ||
+            `Could not prepare "${file.name}" for upload.`
+        );
+      }
+
+      const uploadResponse = await fetch(prepareResult.presignedUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type,
+        },
+        body: file,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Could not upload "${file.name}".`);
+      }
+
+      uploadedFiles.push({
+        originalName: file.name,
+        pathname: prepareResult.pathname,
+        size: file.size,
+        contentType: file.type,
+      });
+    }
+
+    return uploadedFiles;
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    setStatus("sending");
     setMessage("");
     setReferenceNumber("");
+    setUploadProgress("");
 
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-
-    formData.delete("attachments");
-
-    for (const file of selectedFiles) {
-      formData.append("attachments", file);
-    }
-
-    if (totalFileBytes > MAX_UPLOAD_BYTES) {
+    if (totalFileBytes > MAX_TOTAL_BYTES) {
       setStatus("error");
       setMessage(
-        "Your attached files are too large. Please keep the combined upload under about 3.5 MB."
+        "Your files exceed the 75 MB total upload limit. Please remove one or more files and try again."
       );
       return;
     }
 
+    const form = event.currentTarget;
+    const submissionId = createSubmissionId();
+
     try {
+      let uploadedFiles: UploadedFile[] = [];
+
+      if (selectedFiles.length > 0) {
+        setStatus("uploading");
+
+        uploadedFiles = await uploadFiles(submissionId);
+      }
+
+      setStatus("sending");
+      setUploadProgress("Files uploaded. Sending order information...");
+
+      const formData = new FormData(form);
+
+      // Files already went directly to private Blob storage.
+      formData.delete("attachments");
+
+      formData.set("submissionId", submissionId);
+      formData.set("uploadedFiles", JSON.stringify(uploadedFiles));
+
       const response = await fetch("/api/submit-order", {
         method: "POST",
         body: formData,
@@ -141,6 +243,7 @@ export default function SubmitOrderPage() {
 
       if (!response.ok || !result.success) {
         setStatus("error");
+        setUploadProgress("");
         setMessage(
           result.message ||
             "Your order could not be submitted. Please try again."
@@ -149,18 +252,25 @@ export default function SubmitOrderPage() {
       }
 
       setStatus("success");
+      setUploadProgress("");
       setReferenceNumber(result.referenceNumber);
       setMessage("Your order information was submitted successfully.");
 
       form.reset();
       clearFiles();
-    } catch {
+    } catch (error) {
       setStatus("error");
+      setUploadProgress("");
+
       setMessage(
-        "We could not connect to the submission service. Please try again."
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while uploading your files."
       );
     }
   }
+
+  const isWorking = status === "uploading" || status === "sending";
 
   return (
     <main className="min-h-screen bg-[#f4f6f8] text-[#111936]">
@@ -290,23 +400,24 @@ export default function SubmitOrderPage() {
         <div className="kam-container grid gap-8 lg:grid-cols-[1.35fr_.65fr] lg:gap-10">
           <form
             onSubmit={handleSubmit}
-            encType="multipart/form-data"
-            className="border border-slate-200 bg-white p-5 shadow-sm sm:p-10"
+            className="relative border border-slate-200 bg-white p-5 shadow-sm sm:p-10"
           >
+            {/* BOT TRAP */}
             <div
-  aria-hidden="true"
-  className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden"
->
-  <label>
-    Website
-    <input
-      type="text"
-      name="website"
-      tabIndex={-1}
-      autoComplete="off"
-    />
-  </label>
-</div>
+              aria-hidden="true"
+              className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden"
+            >
+              <label>
+                Website
+                <input
+                  type="text"
+                  name="website"
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+              </label>
+            </div>
+
             {/* CONTACT */}
             <div>
               <p className="kam-eyebrow">Contact Information</p>
@@ -401,14 +512,8 @@ export default function SubmitOrderPage() {
                   </p>
                 </div>
 
-                <p
-                  className={`text-xs font-black ${
-                    totalFileBytes > MAX_UPLOAD_BYTES
-                      ? "text-red-600"
-                      : "text-slate-400"
-                  }`}
-                >
-                  {formatBytes(totalFileBytes)} / 3.5 MB
+                <p className="text-xs font-black text-slate-400">
+                  {formatBytes(totalFileBytes)} / 75 MB
                 </p>
               </div>
 
@@ -417,11 +522,17 @@ export default function SubmitOrderPage() {
                 onDragEnter={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className={`group mt-6 flex min-h-48 cursor-pointer flex-col items-center justify-center border-2 border-dashed p-5 text-center transition sm:mt-7 sm:min-h-56 sm:p-8 ${
-                  isDragging
-                    ? "border-yellow-400 bg-yellow-50"
-                    : "border-slate-300 bg-[#f8f9fa] hover:border-yellow-400 hover:bg-yellow-50/30"
+                onClick={() => {
+                  if (!isWorking) {
+                    fileInputRef.current?.click();
+                  }
+                }}
+                className={`group mt-6 flex min-h-48 flex-col items-center justify-center border-2 border-dashed p-5 text-center transition sm:mt-7 sm:min-h-56 sm:p-8 ${
+                  isWorking
+                    ? "cursor-not-allowed border-slate-200 bg-slate-100 opacity-60"
+                    : isDragging
+                      ? "cursor-pointer border-yellow-400 bg-yellow-50"
+                      : "cursor-pointer border-slate-300 bg-[#f8f9fa] hover:border-yellow-400 hover:bg-yellow-50/30"
                 }`}
               >
                 <div
@@ -449,6 +560,10 @@ export default function SubmitOrderPage() {
                   PDF • JPG • PNG • WEBP • WORD • EXCEL
                 </span>
 
+                <span className="mt-3 text-xs font-bold text-slate-400">
+                  Up to 25 MB per file • 75 MB total
+                </span>
+
                 <span className="mt-5 w-full rounded-md bg-[#202d61] px-6 py-4 text-xs font-black uppercase tracking-wide text-white transition group-hover:bg-[#111936] sm:mt-6 sm:w-auto sm:py-3">
                   Choose Files
                 </span>
@@ -457,6 +572,7 @@ export default function SubmitOrderPage() {
                   ref={fileInputRef}
                   type="file"
                   multiple
+                  disabled={isWorking}
                   className="hidden"
                   accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx"
                   onChange={handleFileInput}
@@ -485,8 +601,9 @@ export default function SubmitOrderPage() {
 
                     <button
                       type="button"
+                      disabled={isWorking}
                       onClick={clearFiles}
-                      className="shrink-0 text-[10px] font-black uppercase tracking-[0.08em] text-slate-500 transition hover:text-red-600 sm:text-xs sm:tracking-[0.1em]"
+                      className="shrink-0 text-[10px] font-black uppercase tracking-[0.08em] text-slate-500 transition hover:text-red-600 disabled:opacity-40 sm:text-xs"
                     >
                       Remove All
                     </button>
@@ -518,14 +635,23 @@ export default function SubmitOrderPage() {
 
                         <button
                           type="button"
+                          disabled={isWorking}
                           onClick={() => removeFile(index)}
-                          className="shrink-0 text-[10px] font-black uppercase tracking-[0.06em] text-slate-400 transition hover:text-red-600 sm:text-xs sm:tracking-[0.08em]"
+                          className="shrink-0 text-[10px] font-black uppercase tracking-[0.06em] text-slate-400 transition hover:text-red-600 disabled:opacity-40 sm:text-xs sm:tracking-[0.08em]"
                         >
                           Remove
                         </button>
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {uploadProgress && (
+                <div className="mt-5 border-l-4 border-yellow-400 bg-yellow-50 p-4">
+                  <p className="text-sm font-bold text-[#111936]">
+                    {uploadProgress}
+                  </p>
                 </div>
               )}
             </div>
@@ -576,10 +702,14 @@ export default function SubmitOrderPage() {
 
             <button
               type="submit"
-              disabled={status === "sending"}
+              disabled={isWorking}
               className="mt-7 w-full rounded-md bg-yellow-400 px-6 py-5 text-sm font-black uppercase tracking-wide text-[#111936] transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60 sm:mt-8 sm:px-7"
             >
-              {status === "sending" ? "Sending Order..." : "Submit Order →"}
+              {status === "uploading"
+                ? "Uploading Files..."
+                : status === "sending"
+                  ? "Sending Order..."
+                  : "Submit Order →"}
             </button>
           </form>
 
