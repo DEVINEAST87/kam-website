@@ -1,4 +1,4 @@
-import { get, list } from "@vercel/blob";
+import { get } from "@vercel/blob";
 
 export async function GET(request: Request) {
   try {
@@ -6,13 +6,15 @@ export async function GET(request: Request) {
     const pathname = url.searchParams.get("pathname");
 
     if (!pathname) {
-      return Response.json(
-        {
-          success: false,
-          error: "Missing pathname",
-        },
-        { status: 400 }
-      );
+      return new Response("Missing file pathname.", {
+        status: 400,
+      });
+    }
+
+    if (!pathname.startsWith("customer-uploads/")) {
+      return new Response("Invalid file pathname.", {
+        status: 400,
+      });
     }
 
     const storeId =
@@ -20,30 +22,13 @@ export async function GET(request: Request) {
       process.env.KAM_BLOB_STORE_ID;
 
     if (!storeId) {
-      return Response.json(
+      return new Response(
+        "KAM Blob storage is not configured.",
         {
-          success: false,
-          error: "No Blob store ID available",
-        },
-        { status: 500 }
+          status: 500,
+        }
       );
     }
-
-    const lastSlash = pathname.lastIndexOf("/");
-    const folderPrefix =
-      lastSlash >= 0
-        ? pathname.slice(0, lastSlash + 1)
-        : "";
-
-    const listed = await list({
-      prefix: folderPrefix,
-      limit: 20,
-      storeId,
-    });
-
-    const matchingBlob = listed.blobs.find(
-      (blob) => blob.pathname === pathname
-    );
 
     const result = await get(pathname, {
       access: "private",
@@ -51,45 +36,14 @@ export async function GET(request: Request) {
       useCache: false,
     });
 
-    if (!result) {
-      return Response.json(
-        {
-          success: false,
-          error: "get() returned null",
-          pathname,
-          folderPrefix,
-          matchingBlobFoundByList: Boolean(matchingBlob),
-          listedBlobs: listed.blobs.map((blob) => ({
-            pathname: blob.pathname,
-            size: blob.size,
-          })),
-          hasKamStoreId: Boolean(
-            process.env.KAM_BLOB_STORE_ID
-          ),
-          hasManagedStoreId: Boolean(
-            process.env.BLOB_STORE_ID
-          ),
-          storeIdLength: storeId.length,
-        },
-        { status: 404 }
-      );
-    }
-
-    if (result.statusCode !== 200 || !result.stream) {
-      return Response.json(
-        {
-          success: false,
-          error: "get() did not return 200",
-          pathname,
-          statusCode: result.statusCode,
-          matchingBlobFoundByList: Boolean(matchingBlob),
-          listedBlobs: listed.blobs.map((blob) => ({
-            pathname: blob.pathname,
-            size: blob.size,
-          })),
-        },
-        { status: 404 }
-      );
+    if (
+      !result ||
+      result.statusCode !== 200 ||
+      !result.stream
+    ) {
+      return new Response("Blob not found.", {
+        status: 404,
+      });
     }
 
     const filename =
@@ -109,21 +63,15 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    console.error("Blob diagnostic error:", error);
+    console.error("Blob download error:", error);
 
-    return Response.json(
+    return new Response(
+      error instanceof Error
+        ? error.message
+        : "Unable to download file.",
       {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unknown Blob error",
-        errorName:
-          error instanceof Error
-            ? error.name
-            : "Unknown",
-      },
-      { status: 500 }
+        status: 500,
+      }
     );
   }
 }
