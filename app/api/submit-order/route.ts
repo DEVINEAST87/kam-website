@@ -148,13 +148,8 @@ async function createDownloadLink(pathname: string) {
     throw new Error("KAM Blob storage is not configured.");
   }
 
-  const validUntil =
-    Date.now() + 7 * 24 * 60 * 60 * 1000;
-
   const token = await issueSignedToken({
-    pathname,
     operations: ["get"],
-    validUntil,
     storeId,
   });
 
@@ -162,8 +157,7 @@ async function createDownloadLink(pathname: string) {
     pathname,
     operation: "get",
     access: "private",
-    validUntil,
-    useCache: false,
+    validUntil: Date.now() + 7 * 24 * 60 * 60 * 1000,
   });
 
   return presignedUrl;
@@ -208,7 +202,6 @@ export async function POST(request: Request) {
     const submissionId = getText("submissionId");
     const uploadedFilesRaw = getText("uploadedFiles");
 
-    // Hidden bot trap.
     const website = getText("website");
 
     if (website) {
