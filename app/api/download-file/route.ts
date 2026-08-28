@@ -16,8 +16,8 @@ export async function GET(request: Request) {
     }
 
     const storeId =
-      process.env.KAM_BLOB_STORE_ID ||
-      process.env.BLOB_STORE_ID;
+      process.env.BLOB_STORE_ID ||
+      process.env.KAM_BLOB_STORE_ID;
 
     if (!storeId) {
       return Response.json(
