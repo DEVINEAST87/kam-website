@@ -89,7 +89,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const storeId = process.env.KAM_BLOB_STORE_ID;
+    const storeId =
+      process.env.BLOB_STORE_ID ||
+      process.env.KAM_BLOB_STORE_ID;
 
     if (!storeId) {
       return Response.json(
@@ -117,6 +119,7 @@ export async function POST(request: Request) {
       pathname,
       operation: "put",
       access: "private",
+      addRandomSuffix: false,
       maximumSizeInBytes: MAX_FILE_SIZE,
       validUntil: Date.now() + 15 * 60 * 1000,
     });
