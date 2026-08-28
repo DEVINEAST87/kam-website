@@ -1,7 +1,4 @@
-import {
-  issueSignedToken,
-  presignUrl,
-} from "@vercel/blob";
+import { get } from "@vercel/blob";
 
 export async function GET(request: Request) {
   try {
@@ -20,32 +17,32 @@ export async function GET(request: Request) {
       });
     }
 
-    const storeId = process.env.KAM_BLOB_STORE_ID;
+    const result = await get(pathname, {
+      access: "private",
+    });
 
-    if (!storeId) {
-      return new Response(
-        "KAM Blob storage is not configured.",
-        {
-          status: 500,
-        }
-      );
+    if (!result || result.statusCode !== 200) {
+      return new Response("Blob not found.", {
+        status: 404,
+      });
     }
 
-    const signedToken = await issueSignedToken({
-      pathname,
-      operations: ["get"],
-      storeId,
-    });
+    const filename =
+      pathname.split("/").pop() || "download";
 
-    const { presignedUrl } = await presignUrl(signedToken, {
-      pathname,
-      operation: "get",
-      access: "private",
-      useCache: false,
-      validUntil: Date.now() + 5 * 60 * 1000,
+    return new Response(result.stream, {
+      headers: {
+        "Content-Type":
+          result.blob.contentType ||
+          "application/octet-stream",
+        "Content-Disposition": `attachment; filename="${filename.replace(
+          /"/g,
+          ""
+        )}"`,
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff",
+      },
     });
-
-    return Response.redirect(presignedUrl, 302);
   } catch (error) {
     console.error("Blob download error:", error);
 
