@@ -1,4 +1,4 @@
-import { get } from "@vercel/blob";
+import { get, list } from "@vercel/blob";
 
 export async function GET(request: Request) {
   try {
@@ -24,16 +24,26 @@ export async function GET(request: Request) {
         {
           success: false,
           error: "No Blob store ID available",
-          hasKamStoreId: Boolean(
-            process.env.KAM_BLOB_STORE_ID
-          ),
-          hasManagedStoreId: Boolean(
-            process.env.BLOB_STORE_ID
-          ),
         },
         { status: 500 }
       );
     }
+
+    const lastSlash = pathname.lastIndexOf("/");
+    const folderPrefix =
+      lastSlash >= 0
+        ? pathname.slice(0, lastSlash + 1)
+        : "";
+
+    const listed = await list({
+      prefix: folderPrefix,
+      limit: 20,
+      storeId,
+    });
+
+    const matchingBlob = listed.blobs.find(
+      (blob) => blob.pathname === pathname
+    );
 
     const result = await get(pathname, {
       access: "private",
@@ -45,8 +55,14 @@ export async function GET(request: Request) {
       return Response.json(
         {
           success: false,
-          error: "Blob lookup returned null",
+          error: "get() returned null",
           pathname,
+          folderPrefix,
+          matchingBlobFoundByList: Boolean(matchingBlob),
+          listedBlobs: listed.blobs.map((blob) => ({
+            pathname: blob.pathname,
+            size: blob.size,
+          })),
           hasKamStoreId: Boolean(
             process.env.KAM_BLOB_STORE_ID
           ),
@@ -63,17 +79,14 @@ export async function GET(request: Request) {
       return Response.json(
         {
           success: false,
-          error: "Blob lookup did not return 200",
+          error: "get() did not return 200",
           pathname,
           statusCode: result.statusCode,
-          hasStream: Boolean(result.stream),
-          hasKamStoreId: Boolean(
-            process.env.KAM_BLOB_STORE_ID
-          ),
-          hasManagedStoreId: Boolean(
-            process.env.BLOB_STORE_ID
-          ),
-          storeIdLength: storeId.length,
+          matchingBlobFoundByList: Boolean(matchingBlob),
+          listedBlobs: listed.blobs.map((blob) => ({
+            pathname: blob.pathname,
+            size: blob.size,
+          })),
         },
         { status: 404 }
       );
@@ -96,7 +109,7 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    console.error("Blob download diagnostic error:", error);
+    console.error("Blob diagnostic error:", error);
 
     return Response.json(
       {
@@ -109,12 +122,6 @@ export async function GET(request: Request) {
           error instanceof Error
             ? error.name
             : "Unknown",
-        hasKamStoreId: Boolean(
-          process.env.KAM_BLOB_STORE_ID
-        ),
-        hasManagedStoreId: Boolean(
-          process.env.BLOB_STORE_ID
-        ),
       },
       { status: 500 }
     );
