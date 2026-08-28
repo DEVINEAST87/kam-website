@@ -6,40 +6,77 @@ export async function GET(request: Request) {
     const pathname = url.searchParams.get("pathname");
 
     if (!pathname) {
-      return new Response("Missing file pathname.", {
-        status: 400,
-      });
+      return Response.json(
+        {
+          success: false,
+          error: "Missing pathname",
+        },
+        { status: 400 }
+      );
     }
 
-    if (!pathname.startsWith("customer-uploads/")) {
-      return new Response("Invalid file pathname.", {
-        status: 400,
-      });
-    }
-
-    const storeId = process.env.KAM_BLOB_STORE_ID;
+    const storeId =
+      process.env.KAM_BLOB_STORE_ID ||
+      process.env.BLOB_STORE_ID;
 
     if (!storeId) {
-      return new Response("KAM Blob store ID is missing.", {
-        status: 500,
-      });
+      return Response.json(
+        {
+          success: false,
+          error: "No Blob store ID available",
+          hasKamStoreId: Boolean(
+            process.env.KAM_BLOB_STORE_ID
+          ),
+          hasManagedStoreId: Boolean(
+            process.env.BLOB_STORE_ID
+          ),
+        },
+        { status: 500 }
+      );
     }
 
     const result = await get(pathname, {
       access: "private",
       storeId,
+      useCache: false,
     });
 
-    if (!result || result.statusCode !== 200 || !result.stream) {
-      console.error("Blob lookup failed", {
-        pathname,
-        storeIdPresent: Boolean(storeId),
-        statusCode: result?.statusCode ?? null,
-      });
+    if (!result) {
+      return Response.json(
+        {
+          success: false,
+          error: "Blob lookup returned null",
+          pathname,
+          hasKamStoreId: Boolean(
+            process.env.KAM_BLOB_STORE_ID
+          ),
+          hasManagedStoreId: Boolean(
+            process.env.BLOB_STORE_ID
+          ),
+          storeIdLength: storeId.length,
+        },
+        { status: 404 }
+      );
+    }
 
-      return new Response("Blob not found.", {
-        status: 404,
-      });
+    if (result.statusCode !== 200 || !result.stream) {
+      return Response.json(
+        {
+          success: false,
+          error: "Blob lookup did not return 200",
+          pathname,
+          statusCode: result.statusCode,
+          hasStream: Boolean(result.stream),
+          hasKamStoreId: Boolean(
+            process.env.KAM_BLOB_STORE_ID
+          ),
+          hasManagedStoreId: Boolean(
+            process.env.BLOB_STORE_ID
+          ),
+          storeIdLength: storeId.length,
+        },
+        { status: 404 }
+      );
     }
 
     const filename =
@@ -59,15 +96,27 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    console.error("Blob download error:", error);
+    console.error("Blob download diagnostic error:", error);
 
-    return new Response(
-      error instanceof Error
-        ? error.message
-        : "Unable to download file.",
+    return Response.json(
       {
-        status: 500,
-      }
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unknown Blob error",
+        errorName:
+          error instanceof Error
+            ? error.name
+            : "Unknown",
+        hasKamStoreId: Boolean(
+          process.env.KAM_BLOB_STORE_ID
+        ),
+        hasManagedStoreId: Boolean(
+          process.env.BLOB_STORE_ID
+        ),
+      },
+      { status: 500 }
     );
   }
 }
