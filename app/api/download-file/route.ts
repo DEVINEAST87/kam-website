@@ -17,11 +17,26 @@ export async function GET(request: Request) {
       });
     }
 
+    const storeId = process.env.KAM_BLOB_STORE_ID;
+
+    if (!storeId) {
+      return new Response("KAM Blob store ID is missing.", {
+        status: 500,
+      });
+    }
+
     const result = await get(pathname, {
       access: "private",
+      storeId,
     });
 
-    if (!result || result.statusCode !== 200) {
+    if (!result || result.statusCode !== 200 || !result.stream) {
+      console.error("Blob lookup failed", {
+        pathname,
+        storeIdPresent: Boolean(storeId),
+        statusCode: result?.statusCode ?? null,
+      });
+
       return new Response("Blob not found.", {
         status: 404,
       });
