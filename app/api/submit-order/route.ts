@@ -1,7 +1,3 @@
-import {
-  issueSignedToken,
-  presignUrl,
-} from "@vercel/blob";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -139,28 +135,6 @@ function validateUploadedFiles(
       );
     }
   }
-}
-
-async function createDownloadLink(pathname: string) {
-  const storeId = process.env.KAM_BLOB_STORE_ID;
-
-  if (!storeId) {
-    throw new Error("KAM Blob storage is not configured.");
-  }
-
-  const token = await issueSignedToken({
-    operations: ["get"],
-    storeId,
-  });
-
-  const { presignedUrl } = await presignUrl(token, {
-    pathname,
-    operation: "get",
-    access: "private",
-    validUntil: Date.now() + 7 * 24 * 60 * 60 * 1000,
-  });
-
-  return presignedUrl;
 }
 
 export async function POST(request: Request) {
@@ -313,12 +287,14 @@ export async function POST(request: Request) {
       notes: escapeHtml(notes).replaceAll("\n", "<br />"),
     };
 
-    const filesWithLinks = await Promise.all(
-      uploadedFiles.map(async (file) => ({
-        ...file,
-        downloadUrl: await createDownloadLink(file.pathname),
-      }))
-    );
+    const siteOrigin = new URL(request.url).origin;
+
+    const filesWithLinks = uploadedFiles.map((file) => ({
+      ...file,
+      downloadUrl:
+        `${siteOrigin}/api/download-file?pathname=` +
+        encodeURIComponent(file.pathname),
+    }));
 
     const fileSection =
       filesWithLinks.length === 0
@@ -400,8 +376,7 @@ export async function POST(request: Request) {
               color:#667085;
             "
           >
-            File download links are temporary and expire after 7 days.
-            The original files remain stored privately in KAM storage.
+            Files are stored privately in KAM storage.
           </p>
         `;
 
