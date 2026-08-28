@@ -10,7 +10,15 @@ import {
   useState,
 } from "react";
 
-const MAX_UPLOAD_BYTES = 3_500_000;
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB per file
+const MAX_TOTAL_UPLOAD_BYTES = 75 * 1024 * 1024; // 75 MB total
+
+type UploadedFile = {
+  originalName: string;
+  pathname: string;
+  size: number;
+  contentType: string;
+};
 
 function formatBytes(bytes: number) {
   if (bytes === 0) return "0 KB";
@@ -48,6 +56,17 @@ export default function RequestPricingPage() {
 
     if (validFiles.length === 0) return;
 
+    const oversizedFile = validFiles.find(
+      (file) => file.size > MAX_FILE_SIZE
+    );
+
+    if (oversizedFile) {
+      setFileError(
+        `"${oversizedFile.name}" is larger than the 25 MB per-file limit.`
+      );
+      return;
+    }
+
     const existingNames = new Set(
       selectedFiles.map((file) => `${file.name}-${file.size}`)
     );
@@ -63,9 +82,9 @@ export default function RequestPricingPage() {
       0
     );
 
-    if (combinedSize > MAX_UPLOAD_BYTES) {
+    if (combinedSize > MAX_TOTAL_UPLOAD_BYTES) {
       setFileError(
-        "The combined upload is too large. Please keep all files under about 3.5 MB total for this first version."
+        "The combined upload is too large. Please keep all files under 75 MB total."
       );
       return;
     }
@@ -108,31 +127,145 @@ export default function RequestPricingPage() {
     setFileError("");
   }
 
+  async function uploadFiles(
+    files: File[],
+    submissionId: string
+  ): Promise<UploadedFile[]> {
+    const uploadedFiles: UploadedFile[] = [];
+
+    for (const file of files) {
+      const prepareResponse = await fetch("/api/blob-upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type,
+          size: file.size,
+          uploadType: "pricing",
+          submissionId,
+        }),
+      });
+
+      const prepareResult = await prepareResponse.json();
+
+      if (!prepareResponse.ok || !prepareResult.success) {
+        throw new Error(
+          prepareResult.message ||
+            `Unable to prepare "${file.name}" for upload.`
+        );
+      }
+
+      const uploadResponse = await fetch(prepareResult.presignedUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type,
+        },
+        body: file,
+      });
+
+      const uploadText = await uploadResponse.text();
+
+      if (!uploadResponse.ok) {
+        throw new Error(
+          uploadText || `Unable to upload "${file.name}".`
+        );
+      }
+
+      let uploadedBlob: {
+        pathname?: string;
+        contentType?: string;
+      };
+
+      try {
+        uploadedBlob = JSON.parse(uploadText);
+      } catch {
+        throw new Error(
+          `Vercel Blob did not return valid upload information for "${file.name}".`
+        );
+      }
+
+      if (!uploadedBlob.pathname) {
+        throw new Error(
+          `Vercel Blob did not return a pathname for "${file.name}".`
+        );
+      }
+
+      uploadedFiles.push({
+        originalName: file.name,
+        pathname: uploadedBlob.pathname,
+        size: file.size,
+        contentType: uploadedBlob.contentType || file.type,
+      });
+    }
+
+    return uploadedFiles;
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setStatus("sending");
     setMessage("");
     setReferenceNumber("");
+    setFileError("");
 
     const form = event.currentTarget;
     const formData = new FormData(form);
 
+    const selectedPricingTypes = formData
+      .getAll("pricingType")
+      .map((value) => String(value));
+
+    formData.set(
+      "pricingType",
+      selectedPricingTypes.length > 0
+        ? selectedPricingTypes.join(", ")
+        : "Not specified"
+    );
+
+    formData.set(
+      "notes",
+      String(formData.get("details") ?? "")
+    );
+
     formData.delete("attachments");
 
-    for (const file of selectedFiles) {
-      formData.append("attachments", file);
-    }
+    const oversizedFile = selectedFiles.find(
+      (file) => file.size > MAX_FILE_SIZE
+    );
 
-    if (totalFileBytes > MAX_UPLOAD_BYTES) {
+    if (oversizedFile) {
       setStatus("error");
       setMessage(
-        "Your attached files are too large. Please keep the combined upload under about 3.5 MB."
+        `"${oversizedFile.name}" is larger than the 25 MB per-file limit.`
+      );
+      return;
+    }
+
+    if (totalFileBytes > MAX_TOTAL_UPLOAD_BYTES) {
+      setStatus("error");
+      setMessage(
+        "Your attached files are too large. Please keep the combined upload under 75 MB."
       );
       return;
     }
 
     try {
+      const submissionId = crypto.randomUUID();
+
+      const uploadedFiles = await uploadFiles(
+        selectedFiles,
+        submissionId
+      );
+
+      formData.set("submissionId", submissionId);
+      formData.set(
+        "uploadedFiles",
+        JSON.stringify(uploadedFiles)
+      );
+
       const response = await fetch("/api/request-pricing", {
         method: "POST",
         body: formData,
@@ -157,10 +290,12 @@ export default function RequestPricingPage() {
 
       form.reset();
       clearFiles();
-    } catch {
+    } catch (error) {
       setStatus("error");
       setMessage(
-        "We could not connect to the submission service. Please try again."
+        error instanceof Error
+          ? error.message
+          : "We could not connect to the submission service. Please try again."
       );
     }
   }
@@ -445,12 +580,12 @@ export default function RequestPricingPage() {
 
                 <p
                   className={`text-xs font-black ${
-                    totalFileBytes > MAX_UPLOAD_BYTES
+                    totalFileBytes > MAX_TOTAL_UPLOAD_BYTES
                       ? "text-red-600"
                       : "text-slate-400"
                   }`}
                 >
-                  {formatBytes(totalFileBytes)} / 3.5 MB
+                  {formatBytes(totalFileBytes)} / 75 MB
                 </p>
               </div>
 
@@ -488,7 +623,7 @@ export default function RequestPricingPage() {
                 </span>
 
                 <span className="mt-4 text-[9px] font-black uppercase tracking-[0.12em] text-slate-400 sm:text-[10px] sm:tracking-[0.16em]">
-                  PDF • JPG • PNG • WEBP • WORD • EXCEL
+                  PDF • JPG • PNG • WEBP • WORD • EXCEL • 25 MB MAX PER FILE
                 </span>
 
                 <span className="mt-5 w-full rounded-md bg-[#202d61] px-6 py-4 text-xs font-black uppercase tracking-wide text-white sm:mt-6 sm:w-auto sm:py-3">
