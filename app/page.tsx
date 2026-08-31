@@ -17,21 +17,21 @@ const services = [
     description:
       "Standing seam, mechanical seam, snap-lock and specialty roofing profiles fabricated for commercial projects.",
     tag: "ROOFING SYSTEMS",
-    image: "/images/project-basehor-city-hall.jpg",
+    image: "/images/project-commercial-facade.jpg",
   },
   {
     title: "Wall Panels",
     description:
       "Architectural wall and soffit panel systems in multiple profiles, gauges and finishes.",
     tag: "WALL SYSTEMS",
-    image: "/images/project-commercial-facade.jpg",
+    image: "/images/hero-commercial.jpg",
   },
   {
     title: "ACM",
     description:
       "Precision-routed aluminum composite material panels, custom shapes and architectural assemblies.",
     tag: "ACM FABRICATION",
-    image: "/images/hero-commercial.jpg",
+    image: "/images/project-basehor-city-hall.jpg",
   },
   {
     title: "Gutters & Downspouts",
