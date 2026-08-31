@@ -17,14 +17,14 @@ const services = [
     description:
       "Standing seam, mechanical seam, snap-lock and specialty roofing profiles fabricated for commercial projects.",
     tag: "ROOFING SYSTEMS",
-    image: "/images/project-commercial-facade.jpg",
+    image: "/images/project-basehor-city-hall.jpg",
   },
   {
     title: "Wall Panels",
     description:
       "Architectural wall and soffit panel systems in multiple profiles, gauges and finishes.",
     tag: "WALL SYSTEMS",
-    image: "/images/project-basehor-city-hall.jpg",
+    image: "/images/project-commercial-facade.jpg",
   },
   {
     title: "ACM",
@@ -58,7 +58,7 @@ const reasons = [
 
 const capabilities = [
   "10' Shears",
-  "10' Press Brakes",
+  "10' Automatic Brakes",
   "ACM Routing",
   "Roof & Wall Panel Rollforming",
   "Seamless Gutters",
