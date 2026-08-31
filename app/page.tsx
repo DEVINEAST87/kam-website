@@ -376,7 +376,10 @@ export default function Home() {
 
           <div className="mt-10 grid gap-px overflow-hidden border border-white/15 bg-white/15 sm:mt-14 md:grid-cols-2 lg:grid-cols-4">
             {reasons.map(([title, copy]) => (
-              <div key={title} className="min-h-48 bg-[#202d61] p-6 sm:min-h-56 sm:p-7">
+              <div
+                key={title}
+                className="min-h-48 bg-[#202d61] p-6 sm:min-h-56 sm:p-7"
+              >
                 <div className="h-1 w-12 bg-yellow-400" />
 
                 <h3 className="mt-7 text-xl font-black sm:mt-8">{title}</h3>
