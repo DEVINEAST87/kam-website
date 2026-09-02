@@ -228,7 +228,6 @@ export default function SubmitOrderPage() {
 
       const formData = new FormData(form);
 
-      // Files already went directly to private Blob storage.
       formData.delete("attachments");
 
       formData.set("submissionId", submissionId);
@@ -340,8 +339,8 @@ export default function SubmitOrderPage() {
 
           <div className="relative min-h-[260px] overflow-hidden sm:min-h-[340px] lg:min-h-[520px]">
             <Image
-              src="/images/product-custom-welded.jpg"
-              alt="Custom fabricated architectural sheet metal component"
+              src="/images/custom-curb.jpg"
+              alt="Custom fabricated sheet metal curb by Kansas Architectural Metals"
               fill
               priority
               className="object-cover"
@@ -717,8 +716,8 @@ export default function SubmitOrderPage() {
           <aside className="space-y-5">
             <div className="relative min-h-[220px] overflow-hidden sm:min-h-[260px]">
               <Image
-                src="/images/custom-curb.jpg"
-                alt="Custom fabricated sheet metal curb by Kansas Architectural Metals"
+                src="/images/product-custom-components.jpg"
+                alt="Custom sheet metal components fabricated by KAM"
                 fill
                 className="object-cover"
               />
