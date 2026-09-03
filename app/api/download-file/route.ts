@@ -59,7 +59,7 @@ function isValidPathname(pathname: string) {
 
   const parts = pathname.split("/");
 
-  if (parts.length < 5) {
+  if (parts.length < 4) {
     return false;
   }
 
