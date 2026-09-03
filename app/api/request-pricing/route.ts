@@ -10,6 +10,32 @@ const requests = new Map<
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = 5;
 
+const MAX_FILE_BYTES = 25 * 1024 * 1024;
+const MAX_TOTAL_BYTES = 75 * 1024 * 1024;
+const MAX_FILES = 20;
+
+const ALLOWED_CONTENT_TYPES = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+]);
+
+const ALLOWED_PRICING_TYPES = new Set([
+  "Architectural Sheet Metal / Trim",
+  "Roof Panel Pricing",
+  "Wall / Soffit Panel Pricing",
+  "ACM Pricing",
+  "Gutters / Downspouts",
+  "Coping / Fascia",
+  "Accessories / Fasteners",
+  "Other / Not Sure",
+]);
+
 type UploadedFile = {
   originalName: string;
   pathname: string;
@@ -33,6 +59,10 @@ function isValidEmail(email: string) {
 function isValidPhone(phone: string) {
   const digits = phone.replace(/\D/g, "");
   return digits.length >= 10 && digits.length <= 15;
+}
+
+function isValidSubmissionId(value: string) {
+  return /^[a-zA-Z0-9_-]{8,80}$/.test(value);
 }
 
 function getClientIp(request: Request) {
@@ -97,16 +127,77 @@ function parseUploadedFiles(value: string): UploadedFile[] {
       throw new Error("Uploaded file information is invalid.");
     }
 
-    const file = item as UploadedFile;
-
-    if (!file.pathname.startsWith("customer-uploads/pricing/")) {
-      throw new Error("An uploaded file has an invalid storage path.");
-    }
-
-    files.push(file);
+    files.push(item as UploadedFile);
   }
 
   return files;
+}
+
+function validateUploadedFiles(
+  files: UploadedFile[],
+  submissionId: string
+) {
+  if (files.length > MAX_FILES) {
+    throw new Error(`No more than ${MAX_FILES} files may be submitted.`);
+  }
+
+  let totalBytes = 0;
+
+  const expectedPrefix =
+    `customer-uploads/pricing/${submissionId}/`;
+
+  for (const file of files) {
+    if (
+      !file.originalName ||
+      !file.pathname ||
+      !file.contentType ||
+      !Number.isFinite(file.size) ||
+      file.size <= 0
+    ) {
+      throw new Error("One or more uploaded files are invalid.");
+    }
+
+    if (file.originalName.length > 255) {
+      throw new Error("One or more uploaded filenames are too long.");
+    }
+
+    if (
+      file.originalName.includes("/") ||
+      file.originalName.includes("\\") ||
+      file.originalName.includes("..")
+    ) {
+      throw new Error("One or more uploaded filenames are invalid.");
+    }
+
+    if (!ALLOWED_CONTENT_TYPES.has(file.contentType)) {
+      throw new Error(
+        `"${file.originalName}" is not an allowed file type.`
+      );
+    }
+
+    if (file.size > MAX_FILE_BYTES) {
+      throw new Error(
+        `"${file.originalName}" exceeds the 25 MB per-file limit.`
+      );
+    }
+
+    totalBytes += file.size;
+
+    if (totalBytes > MAX_TOTAL_BYTES) {
+      throw new Error(
+        "Uploaded files exceed the 75 MB total limit."
+      );
+    }
+
+    if (
+      !file.pathname.startsWith(expectedPrefix) ||
+      file.pathname.includes("..")
+    ) {
+      throw new Error(
+        `The uploaded file "${file.originalName}" does not belong to this pricing request.`
+      );
+    }
+  }
 }
 
 function formatBytes(bytes: number) {
@@ -119,6 +210,23 @@ function formatBytes(bytes: number) {
   }
 
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function fieldTooLong(value: string, maxLength: number) {
+  return value.length > maxLength;
+}
+
+function getSiteOrigin(request: Request) {
+  const productionUrl =
+    process.env.VERCEL_PROJECT_PRODUCTION_URL;
+
+  if (productionUrl) {
+    return productionUrl.startsWith("http")
+      ? productionUrl.replace(/\/$/, "")
+      : `https://${productionUrl.replace(/\/$/, "")}`;
+  }
+
+  return new URL(request.url).origin;
 }
 
 export async function POST(request: Request) {
@@ -145,19 +253,20 @@ export async function POST(request: Request) {
     const contactName = getText("contactName");
     const phone = getText("phone");
     const email = getText("email");
+
     const location = getText("location");
     const material = getText("material");
     const color = getText("color");
     const details = getText("details");
+
     const submissionId = getText("submissionId");
     const uploadedFilesRaw = getText("uploadedFiles");
 
-    const pricingTypes = formData
+    const pricingTypeValues = formData
       .getAll("pricingType")
-      .map((value) => String(value))
-      .join(", ");
+      .map((value) => String(value).trim())
+      .filter(Boolean);
 
-    // Hidden honeypot field.
     const website = getText("website");
 
     if (website) {
@@ -171,17 +280,51 @@ export async function POST(request: Request) {
       return Response.json(
         {
           success: false,
-          message: "Please complete all required contact fields.",
+          message:
+            "Please complete all required contact fields.",
         },
         { status: 400 }
       );
     }
 
-    if (company.length > 150 || contactName.length > 150) {
+    if (!submissionId || !isValidSubmissionId(submissionId)) {
+      return Response.json(
+        {
+          success: false,
+          message: "Submission information is invalid.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      fieldTooLong(company, 150) ||
+      fieldTooLong(contactName, 150)
+    ) {
       return Response.json(
         {
           success: false,
           message: "One or more contact fields are too long.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (fieldTooLong(phone, 50)) {
+      return Response.json(
+        {
+          success: false,
+          message: "The phone number is too long.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (fieldTooLong(email, 254)) {
+      return Response.json(
+        {
+          success: false,
+          message: "The email address is too long.",
         },
         { status: 400 }
       );
@@ -207,6 +350,21 @@ export async function POST(request: Request) {
       );
     }
 
+    if (
+      fieldTooLong(location, 100) ||
+      fieldTooLong(material, 150) ||
+      fieldTooLong(color, 150)
+    ) {
+      return Response.json(
+        {
+          success: false,
+          message:
+            "One or more pricing request fields are too long.",
+        },
+        { status: 400 }
+      );
+    }
+
     if (details.length > 10_000) {
       return Response.json(
         {
@@ -217,10 +375,37 @@ export async function POST(request: Request) {
       );
     }
 
-    let uploadedFiles: UploadedFile[];
+    if (pricingTypeValues.length > 10) {
+      return Response.json(
+        {
+          success: false,
+          message: "Too many pricing categories were selected.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      pricingTypeValues.some(
+        (value) => !ALLOWED_PRICING_TYPES.has(value)
+      )
+    ) {
+      return Response.json(
+        {
+          success: false,
+          message: "One or more pricing selections are invalid.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const pricingTypes = pricingTypeValues.join(", ");
+
+    let uploadedFiles: UploadedFile[] = [];
 
     try {
       uploadedFiles = parseUploadedFiles(uploadedFilesRaw);
+      validateUploadedFiles(uploadedFiles, submissionId);
     } catch (error) {
       return Response.json(
         {
@@ -234,52 +419,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const totalUploadedBytes = uploadedFiles.reduce(
-      (total, file) => total + file.size,
-      0
-    );
-
-    if (uploadedFiles.some((file) => file.size > 25 * 1024 * 1024)) {
-      return Response.json(
-        {
-          success: false,
-          message:
-            "One or more uploaded files exceed the 25 MB per-file limit.",
-        },
-        { status: 413 }
-      );
-    }
-
-    if (totalUploadedBytes > 75 * 1024 * 1024) {
-      return Response.json(
-        {
-          success: false,
-          message:
-            "The uploaded files exceed the 75 MB combined upload limit.",
-        },
-        { status: 413 }
-      );
-    }
-
-    if (
-      submissionId &&
-      uploadedFiles.some(
-        (file) =>
-          !file.pathname.startsWith(
-            `customer-uploads/pricing/${submissionId}/`
-          )
-      )
-    ) {
-      return Response.json(
-        {
-          success: false,
-          message:
-            "One or more uploaded files do not match this pricing submission.",
-        },
-        { status: 400 }
-      );
-    }
-
     const referenceNumber = `KAM-P-${new Date()
       .toISOString()
       .slice(0, 10)
@@ -288,7 +427,7 @@ export async function POST(request: Request) {
       .slice(2, 7)
       .toUpperCase()}`;
 
-    const siteOrigin = new URL(request.url).origin;
+    const siteOrigin = getSiteOrigin(request);
 
     const filesWithLinks = uploadedFiles.map((file) => ({
       ...file,
@@ -313,13 +452,10 @@ export async function POST(request: Request) {
       filesWithLinks.length > 0
         ? `
           <hr style="border:none;border-top:1px solid #e5e7eb;margin:28px 0;" />
-
           <h2>Uploaded Files</h2>
-
           <p style="font-size:13px;color:#667085;line-height:1.6;">
             These files are stored privately. Use the buttons below to download them.
           </p>
-
           ${filesWithLinks
             .map(
               (file, index) => `
@@ -327,11 +463,9 @@ export async function POST(request: Request) {
                   <p style="margin:0 0 6px;font-weight:bold;color:#111936;">
                     ${index + 1}. ${escapeHtml(file.originalName)}
                   </p>
-
                   <p style="margin:0 0 14px;font-size:12px;color:#667085;">
                     ${escapeHtml(formatBytes(file.size))}
                   </p>
-
                   <a
                     href="${escapeHtml(file.downloadUrl)}"
                     style="display:inline-block;background:#202d61;color:#ffffff;text-decoration:none;font-size:12px;font-weight:bold;padding:12px 18px;border-radius:4px;"
@@ -345,89 +479,68 @@ export async function POST(request: Request) {
         `
         : `
           <hr style="border:none;border-top:1px solid #e5e7eb;margin:28px 0;" />
-
           <h2>Uploaded Files</h2>
-
           <p style="font-size:13px;color:#667085;">
             No files were uploaded with this pricing request.
           </p>
         `;
 
-    const { data, error } = await resend.emails.send({
+    const { error } = await resend.emails.send({
       from: "KAM Website <onboarding@resend.dev>",
       to: ["delivered@resend.dev"],
       subject: `KAM Current Pricing Request — ${referenceNumber}`,
       replyTo: email,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:760px;margin:0 auto;color:#111936;">
-
           <div style="background:#111936;padding:28px;">
             <h1 style="color:#ffffff;margin:0;">
               Kansas Architectural Metals
             </h1>
-
             <p style="color:#ffd000;font-weight:bold;margin:8px 0 0;">
               Current Pricing Request
             </p>
           </div>
-
           <div style="padding:28px;border:1px solid #e5e7eb;">
-
             <p style="font-size:14px;color:#667085;">
               Pricing Request Reference
             </p>
-
             <p style="font-size:22px;font-weight:bold;">
               ${referenceNumber}
             </p>
-
             <hr style="border:none;border-top:1px solid #e5e7eb;margin:28px 0;" />
-
             <h2>Customer</h2>
-
             <p><strong>Company:</strong> ${safe.company}</p>
             <p><strong>Contact:</strong> ${safe.contactName}</p>
             <p><strong>Phone:</strong> ${safe.phone}</p>
             <p><strong>Email:</strong> ${safe.email}</p>
-
             <hr style="border:none;border-top:1px solid #e5e7eb;margin:28px 0;" />
-
             <h2>Pricing Request</h2>
-
             <p>
               <strong>Preferred Location:</strong>
               ${safe.location || "—"}
             </p>
-
             <p>
               <strong>Pricing Requested:</strong>
               ${safe.pricingTypes || "—"}
             </p>
-
             <p>
               <strong>Material:</strong>
               ${safe.material || "—"}
             </p>
-
             <p>
               <strong>Finish / Color:</strong>
               ${safe.color || "—"}
             </p>
-
             <p>
               <strong>Additional Details:</strong>
               <br />
               ${safe.details || "—"}
             </p>
-
             ${fileSection}
-
             <hr style="border:none;border-top:1px solid #e5e7eb;margin:28px 0;" />
-
             <p style="font-size:13px;color:#667085;">
               Submitted through the Kansas Architectural Metals website.
             </p>
-
           </div>
         </div>
       `,
@@ -449,7 +562,7 @@ export async function POST(request: Request) {
     return Response.json({
       success: true,
       referenceNumber,
-      emailId: data?.id,
+      uploadedFileCount: uploadedFiles.length,
     });
   } catch (error) {
     console.error("Pricing submission error:", error);
@@ -458,9 +571,7 @@ export async function POST(request: Request) {
       {
         success: false,
         message:
-          error instanceof Error
-            ? error.message
-            : "Something went wrong while processing the pricing request.",
+          "Something went wrong while processing the pricing request. Please try again.",
       },
       { status: 500 }
     );

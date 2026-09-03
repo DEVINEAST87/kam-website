@@ -214,17 +214,6 @@ export default function RequestPricingPage() {
     const form = event.currentTarget;
     const formData = new FormData(form);
 
-    const selectedPricingTypes = formData
-      .getAll("pricingType")
-      .map((value) => String(value));
-
-    formData.set(
-      "pricingType",
-      selectedPricingTypes.length > 0
-        ? selectedPricingTypes.join(", ")
-        : "Not specified"
-    );
-
     formData.set(
       "notes",
       String(formData.get("details") ?? "")
