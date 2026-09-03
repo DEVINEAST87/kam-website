@@ -228,6 +228,7 @@ export default function SubmitOrderPage() {
 
       const formData = new FormData(form);
 
+      // Files already went directly to private Blob storage.
       formData.delete("attachments");
 
       formData.set("submissionId", submissionId);
@@ -339,8 +340,8 @@ export default function SubmitOrderPage() {
 
           <div className="relative min-h-[260px] overflow-hidden sm:min-h-[340px] lg:min-h-[520px]">
             <Image
-              src="/images/custom-curb.jpg"
-              alt="Custom fabricated sheet metal curb by Kansas Architectural Metals"
+              src="/images/product-custom-welded.jpg"
+              alt="Custom fabricated architectural sheet metal component"
               fill
               priority
               className="object-cover"
@@ -770,6 +771,38 @@ export default function SubmitOrderPage() {
                 className="mt-6 block w-full border border-[#202d61] px-5 py-4 text-center text-xs font-black uppercase tracking-wide text-[#202d61] transition hover:bg-[#202d61] hover:text-white"
               >
                 Open Fabrication Order Form →
+              </a>
+            </div>
+
+            <div className="border border-slate-200 bg-white p-6 sm:p-7">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#bd2026] sm:text-xs">
+                    Need Installation?
+                  </p>
+
+                  <p className="mt-3 text-sm font-bold leading-6 text-[#111936]">
+                    Looking for professional installation for your architectural
+                    metal project?
+                  </p>
+                </div>
+
+                <Image
+                  src="/logos/tc-logo.png"
+                  alt="Town & Country Sheet Metal"
+                  width={180}
+                  height={110}
+                  className="h-auto w-[86px] shrink-0 object-contain sm:w-[100px]"
+                />
+              </div>
+
+              <a
+                href="https://townandcountrysm.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-5 block w-full border border-[#202d61] px-5 py-3 text-center text-[10px] font-black uppercase tracking-wide text-[#202d61] transition hover:bg-[#202d61] hover:text-white sm:text-xs"
+              >
+                Visit Town &amp; Country →
               </a>
             </div>
 

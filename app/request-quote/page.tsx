@@ -828,6 +828,38 @@ export default function RequestQuotePage() {
               </Link>
             </div>
 
+            <div className="border border-slate-200 bg-white p-6 sm:p-7">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#bd2026] sm:text-xs">
+                    Need Installation?
+                  </p>
+
+                  <p className="mt-3 text-sm font-bold leading-6 text-[#111936]">
+                    Looking for professional installation for your architectural
+                    metal project?
+                  </p>
+                </div>
+
+                <Image
+                  src="/logos/tc-logo.png"
+                  alt="Town & Country Sheet Metal"
+                  width={180}
+                  height={110}
+                  className="h-auto w-[86px] shrink-0 object-contain sm:w-[100px]"
+                />
+              </div>
+
+              <a
+                href="https://townandcountrysm.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-5 block w-full border border-[#202d61] px-5 py-3 text-center text-[10px] font-black uppercase tracking-wide text-[#202d61] transition hover:bg-[#202d61] hover:text-white sm:text-xs"
+              >
+                Visit Town &amp; Country →
+              </a>
+            </div>
+
             <div className="border border-slate-200 bg-white p-6 sm:p-8">
               <p className="kam-eyebrow">Questions?</p>
 

@@ -76,9 +76,9 @@ const locations = [
     specialty: "Custom sheet metal, trims, caps and ACM fabrication",
   },
   {
-    city: "Shawnee",
+    city: "Kansas City",
     address: "6423 Vista Dr, Shawnee, KS 66218",
-    specialty: "Roof and wall panels, gutters, coil processing and perforation",
+    specialty: "Sheet metal fabrication, roof and wall panels, gutters, coil processing and perforation",
   },
   {
     city: "Topeka",
@@ -399,7 +399,7 @@ export default function Home() {
               <p className="kam-eyebrow">Featured Work</p>
 
               <h2 className="kam-heading">
-                Made here. Built into projects everywhere.
+                Kansas made. Built into projects everywhere.
               </h2>
             </div>
 
@@ -544,6 +544,47 @@ export default function Home() {
                 </p>
               </article>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SISTER COMPANY */}
+      <section className="border-y border-slate-200 bg-[#f4f6f8] py-16 sm:py-20">
+        <div className="kam-container">
+          <div className="grid items-center gap-10 border-l-4 border-[#202d61] bg-white p-7 shadow-sm sm:p-10 lg:grid-cols-[.75fr_1.25fr] lg:gap-14">
+            <div className="flex items-center justify-center self-stretch">
+              <Image
+                src="/logos/tc-logo.png"
+                alt="Town & Country Sheet Metal"
+                width={520}
+                height={330}
+                className="h-auto w-full max-w-[220px] object-contain sm:max-w-[240px]"
+              />
+            </div>
+
+            <div>
+              <p className="kam-eyebrow">Need Installation?</p>
+
+              <h2 className="mt-3 text-3xl font-black tracking-[-0.04em] text-[#111936] sm:text-4xl">
+                Professional installation for your architectural metal project.
+              </h2>
+
+              <p className="mt-5 max-w-2xl leading-8 text-slate-500">
+                Kansas Architectural Metals specializes in fabrication. When your
+                project also requires professional installation, our sister
+                company, Town &amp; Country Sheet Metal, has the experience and
+                crews to take it from there.
+              </p>
+
+              <a
+                href="https://townandcountrysm.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-7 inline-flex rounded-md bg-[#111936] px-6 py-4 text-sm font-black uppercase tracking-wide text-white transition hover:-translate-y-1 hover:bg-[#202d61]"
+              >
+                Visit Town &amp; Country →
+              </a>
+            </div>
           </div>
         </div>
       </section>
