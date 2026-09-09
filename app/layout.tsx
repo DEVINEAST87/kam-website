@@ -87,6 +87,150 @@ export const metadata: Metadata = {
   category: "Construction",
 };
 
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://www.kansasarchmetals.com/#organization",
+      name: "Kansas Architectural Metals",
+      url: "https://www.kansasarchmetals.com/",
+      logo: "https://www.kansasarchmetals.com/logos/kam-logo-mark.jpg",
+      description:
+        "Kansas Architectural Metals provides architectural sheet metal fabrication, ACM panels, roof and wall panels, flashings, gutters, and specialty metal fabrication throughout Kansas.",
+    },
+
+    {
+      "@type": "LocalBusiness",
+      "@id": "https://www.kansasarchmetals.com/#wichita",
+      name: "Kansas Architectural Metals",
+      url: "https://www.kansasarchmetals.com/",
+      image: "https://www.kansasarchmetals.com/images/hero-commercial.jpg",
+
+      parentOrganization: {
+        "@id": "https://www.kansasarchmetals.com/#organization",
+      },
+
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "3121 W Pawnee St",
+        addressLocality: "Wichita",
+        addressRegion: "KS",
+        postalCode: "67213",
+        addressCountry: "US",
+      },
+
+      openingHoursSpecification: [
+        {
+          "@type": "OpeningHoursSpecification",
+          dayOfWeek: [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+          ],
+          opens: "06:30",
+          closes: "16:30",
+        },
+      ],
+
+      areaServed: {
+        "@type": "City",
+        name: "Wichita",
+      },
+    },
+
+    {
+      "@type": "LocalBusiness",
+      "@id": "https://www.kansasarchmetals.com/#shawnee",
+      name: "Kansas Architectural Metals",
+      url: "https://www.kansasarchmetals.com/",
+      image: "https://www.kansasarchmetals.com/images/hero-commercial.jpg",
+
+      parentOrganization: {
+        "@id": "https://www.kansasarchmetals.com/#organization",
+      },
+
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "6423 Vista Dr",
+        addressLocality: "Shawnee",
+        addressRegion: "KS",
+        postalCode: "66218",
+        addressCountry: "US",
+      },
+
+      openingHoursSpecification: [
+        {
+          "@type": "OpeningHoursSpecification",
+          dayOfWeek: [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+          ],
+          opens: "06:30",
+          closes: "16:30",
+        },
+      ],
+
+      areaServed: [
+        {
+          "@type": "City",
+          name: "Shawnee",
+        },
+        {
+          "@type": "City",
+          name: "Kansas City",
+        },
+      ],
+    },
+
+    {
+      "@type": "LocalBusiness",
+      "@id": "https://www.kansasarchmetals.com/#topeka",
+      name: "Kansas Architectural Metals",
+      url: "https://www.kansasarchmetals.com/",
+      image: "https://www.kansasarchmetals.com/images/hero-commercial.jpg",
+
+      parentOrganization: {
+        "@id": "https://www.kansasarchmetals.com/#organization",
+      },
+
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "417 SE 10th Ave",
+        addressLocality: "Topeka",
+        addressRegion: "KS",
+        postalCode: "66607",
+        addressCountry: "US",
+      },
+
+      openingHoursSpecification: [
+        {
+          "@type": "OpeningHoursSpecification",
+          dayOfWeek: [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+          ],
+          opens: "06:30",
+          closes: "16:30",
+        },
+      ],
+
+      areaServed: {
+        "@type": "City",
+        name: "Topeka",
+      },
+    },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -94,7 +238,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData),
+          }}
+        />
+
+        {children}
+      </body>
     </html>
   );
 }
