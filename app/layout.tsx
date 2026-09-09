@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://kam-website-flame.vercel.app"),
+  metadataBase: new URL("https://www.kansasarchmetals.com"),
 
   title: {
     default:
