@@ -40,6 +40,10 @@ export const metadata: Metadata = {
   creator: "Kansas Architectural Metals",
   publisher: "Kansas Architectural Metals",
 
+  verification: {
+    google: "QvXSO620EFlDgiKMT8z-PV-J6ZFljBy-sy4ECEYxx2M",
+  },
+
   robots: {
     index: true,
     follow: true,
