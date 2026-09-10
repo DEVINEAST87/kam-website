@@ -635,7 +635,7 @@ export default function Home() {
       {/* FOOTER */}
       <footer id="contact" className="bg-[#0b1024] py-14 text-white sm:py-16">
         <div className="kam-container">
-          <div className="grid gap-10 lg:grid-cols-[1.3fr_.7fr_.7fr] lg:gap-12">
+          <div className="grid gap-10 lg:grid-cols-[1.25fr_.75fr_.75fr_.75fr] lg:gap-12">
             <div>
               <Image
                 src="/logos/kam-logo-horizontal.png"
@@ -648,6 +648,44 @@ export default function Home() {
               <p className="mt-7 max-w-md leading-7 text-slate-400">
                 Architectural Metals. Built by Pros.
               </p>
+            </div>
+
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-yellow-400">
+                Quick Links
+              </p>
+
+              <div className="mt-6 space-y-3 text-sm">
+                <Link
+                  href="/submit-order"
+                  className="block text-slate-400 transition hover:text-white"
+                >
+                  Submit an Order
+                </Link>
+
+                <Link
+                  href="/request-quote"
+                  className="block text-slate-400 transition hover:text-white"
+                >
+                  Request a Quote
+                </Link>
+
+                <Link
+                  href="/request-pricing"
+                  className="block text-slate-400 transition hover:text-white"
+                >
+                  Request Current Pricing
+                </Link>
+
+                <a
+                  href="/downloads/KAM-Fabrication-Order-Form.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-slate-400 transition hover:text-white"
+                >
+                  Download Fabrication Form
+                </a>
+              </div>
             </div>
 
             <div>
