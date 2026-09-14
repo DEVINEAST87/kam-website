@@ -205,17 +205,8 @@ function fieldTooLong(value: string, maxLength: number) {
   return value.length > maxLength;
 }
 
-function getSiteOrigin(request: Request) {
-  const productionUrl =
-    process.env.VERCEL_PROJECT_PRODUCTION_URL;
-
-  if (productionUrl) {
-    return productionUrl.startsWith("http")
-      ? productionUrl.replace(/\/$/, "")
-      : `https://${productionUrl.replace(/\/$/, "")}`;
-  }
-
-  return new URL(request.url).origin;
+function getSiteOrigin(_request: Request) {
+  return "https://www.kansasarchmetals.com";
 }
 
 export async function POST(request: Request) {
@@ -472,8 +463,8 @@ export async function POST(request: Request) {
         `;
 
     const { error } = await resend.emails.send({
-      from: "KAM Website <onboarding@resend.dev>",
-      to: ["delivered@resend.dev"],
+      from: "KAM Website <website@kansasarchmetals.com>",
+      to: ["fabricate@kansasarchmetals.com"],
       subject: `New KAM Quote Request — ${referenceNumber}`,
       replyTo: email,
 
