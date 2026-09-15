@@ -18,6 +18,7 @@ const services = [
       "Standing seam, mechanical seam, snap-lock and specialty roofing profiles fabricated for commercial projects.",
     tag: "ROOFING SYSTEMS",
     image: "/images/roof-panels-project.jpg",
+    href: "/products/roof-panels",
   },
   {
     title: "Wall Panels",
@@ -324,41 +325,68 @@ export default function Home() {
           </div>
 
           <div className="mt-10 grid gap-5 sm:mt-14 md:grid-cols-2 lg:grid-cols-3">
-            {services.map((service) => (
-              <article
-                key={service.title}
-                className="group overflow-hidden border border-slate-200 bg-white transition duration-300 hover:-translate-y-1 hover:shadow-xl"
-              >
-                <div className="relative h-52 overflow-hidden sm:h-56">
-                  <Image
-                    src={service.image}
-                    alt={service.title}
-                    fill
-                    className="object-cover transition duration-500 group-hover:scale-105"
-                  />
+            {services.map((service) => {
+              const cardContent = (
+                <>
+                  <div className="relative h-52 overflow-hidden sm:h-56">
+                    <Image
+                      src={service.image}
+                      alt={service.title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="object-cover transition duration-500 group-hover:scale-105"
+                    />
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
 
-                  <span className="absolute bottom-4 left-5 text-[10px] font-black uppercase tracking-[0.18em] text-white">
-                    {service.tag}
-                  </span>
-                </div>
+                    <span className="absolute bottom-4 left-5 text-[10px] font-black uppercase tracking-[0.18em] text-white">
+                      {service.tag}
+                    </span>
+                  </div>
 
-                <div className="p-6 sm:p-7">
-                  <h3 className="text-2xl font-black tracking-[-0.03em] text-[#111936]">
-                    {service.title}
-                  </h3>
+                  <div className="p-6 sm:p-7">
+                    <h3 className="text-2xl font-black tracking-[-0.03em] text-[#111936]">
+                      {service.title}
+                    </h3>
 
-                  <p className="mt-4 leading-7 text-slate-500">
-                    {service.description}
-                  </p>
+                    <p className="mt-4 leading-7 text-slate-500">
+                      {service.description}
+                    </p>
 
-                  <p className="mt-7 text-xs font-black uppercase tracking-[0.12em] text-[#202d61]">
-                    Learn More →
-                  </p>
-                </div>
-              </article>
-            ))}
+                    <p
+                      className={`mt-7 text-xs font-black uppercase tracking-[0.12em] ${
+                        service.href
+                          ? "text-[#202d61] transition group-hover:text-[#111936]"
+                          : "text-[#202d61]"
+                      }`}
+                    >
+                      Learn More →
+                    </p>
+                  </div>
+                </>
+              );
+
+              if (service.href) {
+                return (
+                  <Link
+                    key={service.title}
+                    href={service.href}
+                    className="group block overflow-hidden border border-slate-200 bg-white transition duration-300 hover:-translate-y-1 hover:shadow-xl"
+                  >
+                    {cardContent}
+                  </Link>
+                );
+              }
+
+              return (
+                <article
+                  key={service.title}
+                  className="group overflow-hidden border border-slate-200 bg-white transition duration-300 hover:-translate-y-1 hover:shadow-xl"
+                >
+                  {cardContent}
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>
