@@ -4,7 +4,8 @@ import Link from "next/link";
 const roofProfiles = [
   {
     name: "SS675",
-    seam: '1 5/8"',
+    dimensionLabel: "Seam Height",
+    dimension: '1 5/8"',
     widths: '12", 14", 16", 18"',
     type: "Snap-Lock Standing Seam",
     description:
@@ -14,7 +15,8 @@ const roofProfiles = [
   },
   {
     name: "SS150",
-    seam: '1 1/2"',
+    dimensionLabel: "Seam Height",
+    dimension: '1 1/2"',
     widths: '12", 16", 18", 20"',
     type: "Mechanically Seamed",
     description:
@@ -24,13 +26,25 @@ const roofProfiles = [
   },
   {
     name: "SS200",
-    seam: '2"',
+    dimensionLabel: "Seam Height",
+    dimension: '2"',
     widths: '12", 14", 16", 18"',
     type: "Mechanically Seamed",
     description:
       "A 2-inch mechanically seamed standing seam panel with concealed clips for commercial roofing applications.",
     href: "/products/roof-panels/ss200",
     image: "/images/ss200-profile.png",
+  },
+  {
+    name: "SS210A",
+    dimensionLabel: "Seam Height",
+    dimension: '2"',
+    widths: '12"–24"',
+    type: "Mechanically Seamed",
+    description:
+      "A 2-inch mechanically seamed roof panel with adjustable coverage from 12 to 24 inches for commercial and architectural roofing applications.",
+    href: "/products/roof-panels/ss210a",
+    image: "/images/ss210a-profile.png",
   },
 ];
 
@@ -119,6 +133,8 @@ export default function RoofPanelsPage() {
           alt="Standing seam metal roof panels fabricated by Kansas Architectural Metals"
           fill
           priority
+          loading="eager"
+          sizes="100vw"
           className="object-cover object-center"
         />
 
@@ -196,12 +212,12 @@ export default function RoofPanelsPage() {
             </h2>
 
             <p className="kam-copy max-w-lg">
-              Multiple panel widths, materials and face options are available
-              across our standing seam lineup.
+              Multiple panel widths, materials and profile options are
+              available across our architectural roof panel lineup.
             </p>
           </div>
 
-          <div className="mt-10 grid gap-5 sm:mt-14 lg:grid-cols-3">
+          <div className="mt-10 grid gap-5 sm:mt-14 md:grid-cols-2 xl:grid-cols-4">
             {roofProfiles.map((profile) => (
               <article
                 key={profile.name}
@@ -226,8 +242,9 @@ export default function RoofPanelsPage() {
                 >
                   <Image
                     src={profile.image}
-                    alt={`${profile.name} standing seam roof panel profile`}
+                    alt={`${profile.name} architectural roof panel profile`}
                     fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 25vw"
                     className="object-contain px-2 py-5"
                     style={{
                       colorScheme: "only light",
@@ -239,11 +256,11 @@ export default function RoofPanelsPage() {
                 <div className="mt-7 grid grid-cols-2 gap-px bg-slate-200">
                   <div className="bg-[#f8f9fa] p-4">
                     <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
-                      Seam Height
+                      {profile.dimensionLabel}
                     </p>
 
                     <p className="mt-2 font-black text-[#111936]">
-                      {profile.seam}
+                      {profile.dimension}
                     </p>
                   </div>
 
@@ -388,6 +405,7 @@ export default function RoofPanelsPage() {
                   src="/images/roof-panels-project.jpg"
                   alt="Standing seam metal roofing"
                   fill
+                  sizes="(max-width: 1024px) 100vw, 45vw"
                   className="object-cover"
                 />
 

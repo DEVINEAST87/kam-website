@@ -26,6 +26,7 @@ const services = [
       "Architectural wall and soffit panel systems in multiple profiles, gauges and finishes.",
     tag: "WALL SYSTEMS",
     image: "/images/hero-commercial.jpg",
+    href: "/products/wall-soffit-panels",
   },
   {
     title: "ACM",
@@ -79,12 +80,14 @@ const locations = [
   {
     city: "Kansas City",
     address: "6423 Vista Dr, Shawnee, KS 66218",
-    specialty: "Sheet metal fabrication, roof and wall panels, gutters, coil processing and perforation",
+    specialty:
+      "Sheet metal fabrication, roof and wall panels, gutters, coil processing and perforation",
   },
   {
     city: "Topeka",
     address: "417 SE 10th Ave, Topeka, KS 66607",
-    specialty: "ACM routing, fabrication and architectural installation expertise",
+    specialty:
+      "ACM routing, fabrication and architectural installation expertise",
   },
 ];
 
@@ -218,6 +221,8 @@ export default function Home() {
           alt="Kansas Architectural Metals commercial architectural metal project"
           fill
           priority
+          loading="eager"
+          sizes="100vw"
           className="object-cover object-center"
         />
 
@@ -443,6 +448,7 @@ export default function Home() {
                 src="/images/project-basehor-city-hall.jpg"
                 alt="Basehor City Hall architectural metal project"
                 fill
+                sizes="(max-width: 1024px) 100vw, 65vw"
                 className="object-cover transition duration-700 group-hover:scale-[1.03]"
               />
 
@@ -469,6 +475,7 @@ export default function Home() {
                   src="/images/project-commercial-facade.jpg"
                   alt="Commercial architectural metal facade"
                   fill
+                  sizes="(max-width: 1024px) 100vw, 35vw"
                   className="object-cover transition duration-700 group-hover:scale-[1.04]"
                 />
 
@@ -484,6 +491,7 @@ export default function Home() {
                   src="/images/product-custom-welded.jpg"
                   alt="Custom fabricated sheet metal component"
                   fill
+                  sizes="(max-width: 1024px) 100vw, 35vw"
                   className="object-cover transition duration-700 group-hover:scale-[1.04]"
                 />
 
