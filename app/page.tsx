@@ -11,6 +11,7 @@ const services = [
       "Custom flashings, coping, fascia, edge metal, trim and specialty brake-formed profiles.",
     tag: "CUSTOM FABRICATION",
     image: "/images/product-trim-profiles.jpg",
+    href: "/products/architectural-sheet-metal",
   },
   {
     title: "Roof Panels",
@@ -34,6 +35,7 @@ const services = [
       "Precision-routed aluminum composite material panels, custom shapes and architectural assemblies.",
     tag: "ACM FABRICATION",
     image: "/images/acm-chevrolet-project.jpg",
+    href: "/products/acm",
   },
   {
     title: "Gutters & Downspouts",
@@ -41,6 +43,7 @@ const services = [
       "Custom and seamless gutter systems, downspouts, collector heads, hangers and related components.",
     tag: "DRAINAGE",
     image: "/images/product-custom-components.jpg",
+    href: "/products/gutters-downspouts",
   },
   {
     title: "Custom Fabrication",
@@ -48,6 +51,7 @@ const services = [
       "Have a drawing, sketch or unusual detail? Send it to us and let our fabrication team take it from there.",
     tag: "BUILT TO ORDER",
     image: "/images/product-custom-welded.jpg",
+    href: "/products/custom-fabrication",
   },
 ];
 
@@ -358,38 +362,21 @@ export default function Home() {
                       {service.description}
                     </p>
 
-                    <p
-                      className={`mt-7 text-xs font-black uppercase tracking-[0.12em] ${
-                        service.href
-                          ? "text-[#202d61] transition group-hover:text-[#111936]"
-                          : "text-[#202d61]"
-                      }`}
-                    >
+                    <p className="mt-7 text-xs font-black uppercase tracking-[0.12em] text-[#202d61] transition group-hover:text-[#111936]">
                       Learn More →
                     </p>
                   </div>
                 </>
               );
 
-              if (service.href) {
-                return (
-                  <Link
-                    key={service.title}
-                    href={service.href}
-                    className="group block overflow-hidden border border-slate-200 bg-white transition duration-300 hover:-translate-y-1 hover:shadow-xl"
-                  >
-                    {cardContent}
-                  </Link>
-                );
-              }
-
               return (
-                <article
+                <Link
                   key={service.title}
-                  className="group overflow-hidden border border-slate-200 bg-white transition duration-300 hover:-translate-y-1 hover:shadow-xl"
+                  href={service.href}
+                  className="group block overflow-hidden border border-slate-200 bg-white transition duration-300 hover:-translate-y-1 hover:shadow-xl"
                 >
                   {cardContent}
-                </article>
+                </Link>
               );
             })}
           </div>
@@ -606,8 +593,8 @@ export default function Home() {
               </h2>
 
               <p className="mt-5 max-w-2xl leading-8 text-slate-500">
-                Kansas Architectural Metals specializes in fabrication. When your
-                project also requires professional installation, our sister
+                Kansas Architectural Metals specializes in fabrication. When
+                your project also requires professional installation, our sister
                 company, Town &amp; Country Sheet Metal, has the experience and
                 crews to take it from there.
               </p>
