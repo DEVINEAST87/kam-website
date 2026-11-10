@@ -612,18 +612,47 @@ export default function Home() {
         </div>
       </section>
 
-      {/* TRUST */}
+          {/* TRUST */}
       <section className="border-y border-slate-200 bg-[#f8f9fa] py-12 sm:py-14">
         <div className="kam-container">
           <p className="text-center text-xs font-black uppercase tracking-[0.2em] text-slate-400">
             Materials • Quality • Industry Relationships
           </p>
 
-          <div className="mt-8 grid grid-cols-2 gap-6 text-center text-base font-black text-[#202d61] sm:text-lg lg:grid-cols-4">
-            <div>PAC-CLAD</div>
-            <div>DREXEL</div>
-            <div>PACCA</div>
-            <div>KEYSTONE QA</div>
+          <div className="mt-8 grid grid-cols-2 items-center gap-6 lg:grid-cols-4 lg:gap-8">
+            {[
+              {
+                name: "PAC-CLAD / Petersen",
+                src: "/images/pac-clad-logo.png",
+              },
+              {
+                name: "Drexel Metals",
+                src: "/images/drexel-logo-new.png",
+              },
+              {
+                name: "PAC Association of Portable Rollform Owners",
+                src: "/images/pacca-logo.png",
+              },
+              {
+                name: "Keystone Certifications",
+                src: "/images/keystone-logo.png",
+              },
+            ].map((partner) => (
+              <div
+                key={partner.name}
+                className="flex min-h-28 items-center justify-center rounded-md bg-white px-4 py-5 sm:min-h-32"
+              >
+                <div className="relative h-20 w-full sm:h-24">
+                  <Image
+                    src={partner.src}
+                    alt={partner.name}
+                    fill
+                    sizes="(max-width: 1024px) 50vw, 25vw"
+                    className="object-contain"
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
